@@ -1,0 +1,16 @@
+{
+  "schema_version": "v1",
+  "name_for_human": "SITRACK",
+  "name_for_model": "sitrack",
+  "description_for_human": "Sistem Informasi Track Record Alumni Universitas Amikom Surakarta — platform resmitracer study untuk alumni.",
+  "description_for_model": "SITRACK is the official alumni tracer study platform for Universitas Amikom Surakarta. It tracks career records, collects questionnaire data for accreditation, and provides a career center for alumni. The platform uses Next.js, Supabase, and implements role-based access control.",
+  "auth": {
+    "type": "none"
+  },
+  "api": {
+    "type": "none"
+  },
+  "logo_url": "https://sitrack.amikomsolo.ac.id/logo.png",
+  "contact_email": "admin@amikomsolo.ac.id",
+  "legal_info_url": "https://solo.amikom.ac.id"
+}

@@ -1,0 +1,43 @@
+# SITRACK — Sistem Informasi Track Record Alumni
+
+## About
+SITRACK is the official alumni tracer study platform for Universitas Amikom Surakarta (STMIK Amikom Surakarta). It is a web-based system designed to track career records, contributions, and developments of graduates.
+
+## Key Information
+- **Full Name**: Sistem Informasi Track Record Alumni (SITRACK)
+- **Institution**: Universitas Amikom Surakarta (STMIK Amikom Surakarta)
+- **Location**: Surakarta, Jawa Tengah, Indonesia
+- **Website**: https://sitrack.amikomsolo.ac.id
+- **Official University Site**: https://solo.amikom.ac.id
+
+## Purpose
+SITRACK serves as a tracer study system for:
+1. Tracking alumni career records and employment history after graduation
+2. Collecting questionnaire data for accreditation and curriculum improvement
+3. Providing a curated career center with job opportunities for alumni
+4. Generating analytics and reports on employment rates, salary distribution, and field matching
+
+## Features
+- **Track Record Management**: Alumni can manage their career history and work experiences
+- **Tracer Study Questionnaires**: Structured questionnaires for accreditation data collection
+- **Career Center**: Curated job opportunities specifically for Amikom alumni
+- **Admin Dashboard**: Statistics, user management, and bulk data import via CSV
+- **Analytics & Reporting**: Employment rate, response rate, field match statistics
+- **Role-Based Access Control (RBAC)**: Secure data access with Row-Level Security
+
+## Target Users
+- Alumni of STMIK Amikom Surakarta
+- University administrators managing tracer study data
+- Accreditation bodies requiring employment statistics
+
+## Technology Stack
+- Next.js 14+ (App Router)
+- TypeScript
+- Supabase (Authentication & Database)
+- Tailwind CSS
+- Row-Level Security (RLS) for data protection
+
+## Contact
+- **University**: STMIK Amikom Surakarta
+- **Address**: Surakarta, Jawa Tengah, Indonesia
+- **Website**: https://solo.amikom.ac.id

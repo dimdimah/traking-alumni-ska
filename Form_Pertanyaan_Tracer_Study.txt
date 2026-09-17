@@ -1,0 +1,163 @@
+FORM PERTANYAAN SMART TRACER STUDY
+STMIK AMIKOM Surakarta
+========================================================
+
+A. DATA PRIBADI
+--------------------------------------------------------
+1. Nama Lengkap / NIM
+   Jawaban: ____________________
+
+2. Jenis Kelamin
+   ( ) Laki-laki   ( ) Perempuan
+
+3. Tahun Kelulusan
+   Jawaban: ____________________
+
+4. Jurusan / Program Studi
+   Jawaban: ____________________
+
+5. No. Telepon / Email
+   Jawaban: ____________________
+
+
+B. KUISIONER WAJIB - UNTUK STATUS BEKERJA, WIRAUSAHA & KULIAH
+--------------------------------------------------------
+f8. Status Anda saat ini?
+   ( ) Bekerja   ( ) Wiraswasta   ( ) Kuliah   ( ) Belum Bekerja   ( ) Lainnya
+
+f504. Apakah Anda telah mendapatkan pekerjaan dalam <= 6 bulan (termasuk bekerja
+      sebelum lulus)?
+   Jawaban: ____________________
+
+f502/f506. Selang berapa bulan Anda mendapat pekerjaan tersebut?
+   Jawaban: __________ bulan
+
+f505. Berapa rata-rata pendapatan Anda per bulan (take home pay)?
+   Jawaban: Rp. ____________________
+
+f5a1/f5a2. Di mana lokasi tempat Anda bekerja?
+   Jawaban: ____________________
+
+f1101. Apa jenis perusahaan/instansi/institusi tempat Anda bekerja sekarang?
+   ( ) Instansi Pemerintah   ( ) BUMN/BUMD   ( ) Perusahaan Swasta
+   ( ) Organisasi Non-Profit/LSM   ( ) Wiraswasta   ( ) Lainnya: ________
+
+f1102. Jika memilih "Lainnya", sebutkan:
+   Jawaban: ____________________
+
+f5b. Apa nama perusahaan/kantor tempat Anda bekerja?
+   Jawaban: ____________________
+
+f14. Seberapa erat hubungan antara bidang studi dengan pekerjaan Anda?
+   ( ) Sangat Erat   ( ) Erat   ( ) Cukup Erat   ( ) Kurang Erat   ( ) Tidak Sama Sekali
+
+f15. Tingkat pendidikan apa yang paling tepat/sesuai untuk pekerjaan Anda saat ini?
+   ( ) Lebih Tinggi   ( ) Tingkat yang Sama   ( ) Lebih Rendah
+
+
+C. TINGKAT KOMPETENSI
+--------------------------------------------------------
+Untuk setiap kompetensi berikut, isilah tingkat penguasaan Anda saat lulus (A)
+dan tingkat yang diperlukan dalam pekerjaan saat ini (B).
+Skala: [1] Sangat Rendah  [2] Rendah  [3] Cukup  [4] Tinggi  [5] Sangat Tinggi
+
+No | Kompetensi                        | (A) Saat Lulus | (B) Saat Ini
+---|------------------------------------|----------------|---------------
+1  | Etika                              | ____           | ____
+2  | Keahlian berdasarkan bidang ilmu   | ____           | ____
+3  | Bahasa Inggris                     | ____           | ____
+4  | Penggunaan Teknologi Informasi     | ____           | ____
+5  | Komunikasi                         | ____           | ____
+6  | Kerja sama tim                     | ____           | ____
+7  | Pengembangan Diri                  | ____           | ____
+
+
+D. KUISIONER OPSIONAL
+--------------------------------------------------------
+
+D.1 Metode Pembelajaran
+Menurut Anda seberapa besar penekanan pada metode pembelajaran berikut
+dilaksanakan di program studi Anda?
+Skala: [1] Sangat Besar  [2] Besar  [3] Cukup  [4] Kurang  [5] Sangat Kurang
+
+f21. Perkuliahan                             Jawaban: ____
+f22. Demonstrasi                             Jawaban: ____
+f23. Partisipasi dalam proyek riset          Jawaban: ____
+f24. Magang                                  Jawaban: ____
+f25. Praktikum                               Jawaban: ____
+f26. Kerja Lapangan                          Jawaban: ____
+f27. Diskusi                                 Jawaban: ____
+
+D.2 Pencarian Kerja
+f3. Kapan Anda mulai mencari pekerjaan? (Pekerjaan sambilan tidak dimasukkan)
+   ( ) [1] Kira-kira ____ bulan sebelum lulus
+   ( ) [2] Kira-kira ____ bulan sesudah lulus
+   ( ) [3] Saya tidak mencari kerja
+
+f1001. Apakah Anda aktif mencari pekerjaan dalam 4 minggu terakhir?
+   ( ) Ya   ( ) Tidak
+
+f1002. Jika memilih "Lainnya", sebutkan:
+   Jawaban: ____________________
+
+D.3 Cara Mencari Pekerjaan (Jawaban bisa lebih dari satu)
+f401. Melalui iklan di koran/majalah/brosur?                          ( ) Ya  ( ) Tidak
+f402. Melamar ke perusahaan tanpa mengetahui lowongan yang ada        ( ) Ya  ( ) Tidak
+f403. Pergi ke bursa/pameran kerja                                    ( ) Ya  ( ) Tidak
+f404. Mencari lewat internet/iklan online/milis                       ( ) Ya  ( ) Tidak
+f405. Dihubungi oleh perusahaan                                       ( ) Ya  ( ) Tidak
+f406. Menghubungi Kemenakertrans                                      ( ) Ya  ( ) Tidak
+f407. Menghubungi agen tenaga kerja komersial/swasta                  ( ) Ya  ( ) Tidak
+f408. Memeroleh informasi dari pusat/kantor pengembangan karir
+      fakultas/STMIK AMIKOM Surakarta                                           ( ) Ya  ( ) Tidak
+f409. Menghubungi kantor kemahasiswaan/hubungan alumni                ( ) Ya  ( ) Tidak
+f410. Membangun jejaring (network) sejak masih kuliah                 ( ) Ya  ( ) Tidak
+f411. Melalui relasi (misalnya dosen, orang tua, saudara, teman, dll.) ( ) Ya  ( ) Tidak
+f412. Membangun bisnis sendiri                                        ( ) Ya  ( ) Tidak
+f413. Melalui penempatan kerja atau magang                            ( ) Ya  ( ) Tidak
+f414. Bekerja di tempat yang sama dengan tempat kerja semasa kuliah   ( ) Ya  ( ) Tidak
+f416. Lainnya, sebutkan:
+   Jawaban: ____________________
+
+D.4 Statistik Lamaran
+f6. Berapa perusahaan/instansi/institusi yang sudah Anda lamar (lewat surat
+    atau e-mail) sebelum Anda memeroleh pekerjaan pertama?
+   Jawaban: ____________________
+
+f7. Berapa banyak perusahaan/instansi/institusi yang merespons lamaran Anda?
+   Jawaban: ____________________
+
+f7a. Berapa banyak perusahaan/instansi/institusi yang mengundang Anda untuk
+     wawancara?
+   Jawaban: ____________________
+
+D.5 Alasan Bekerja Tidak Sesuai Pendidikan (Jawaban bisa lebih dari satu)
+f16. Jika menurut Anda pekerjaan Anda saat ini tidak sesuai dengan pendidikan
+     Anda, mengapa Anda mengambilnya?
+
+f1601. Pertanyaan tidak sesuai; pekerjaan saya sekarang sudah sesuai
+       dengan pendidikan saya                                        ( ) Ya  ( ) Tidak
+f1602. Saya belum mendapatkan pekerjaan yang lebih sesuai              ( ) Ya  ( ) Tidak
+f1603. Di pekerjaan ini saya memeroleh prospek karir yang baik         ( ) Ya  ( ) Tidak
+f1604. Saya lebih suka bekerja di area pekerjaan yang tidak ada
+       hubungannya dengan pendidikan saya                             ( ) Ya  ( ) Tidak
+f1605. Saya dipromosikan ke posisi yang kurang berhubungan dengan
+       pendidikan saya dibanding posisi sebelumnya                    ( ) Ya  ( ) Tidak
+f1606. Saya dapat memeroleh pendapatan yang lebih tinggi di pekerjaan
+       ini                                                            ( ) Ya  ( ) Tidak
+f1607. Pekerjaan saya saat ini lebih aman/terjamin/secure              ( ) Ya  ( ) Tidak
+f1608. Pekerjaan saya saat ini lebih menarik                          ( ) Ya  ( ) Tidak
+f1609. Pekerjaan saya saat ini lebih memungkinkan saya mengambil
+       pekerjaan tambahan/jadwal yang fleksibel, dll.                 ( ) Ya  ( ) Tidak
+f1610. Pekerjaan saya saat ini lokasinya lebih dekat dari rumah saya   ( ) Ya  ( ) Tidak
+f1611. Pekerjaan saya saat ini dapat lebih menjamin kebutuhan
+       keluarga saya                                                  ( ) Ya  ( ) Tidak
+f1612. Pada awal meniti karir ini, saya harus menerima pekerjaan yang
+       tidak berhubungan dengan pendidikan saya                       ( ) Ya  ( ) Tidak
+f1613. Lainnya, sebutkan:
+   Jawaban: ____________________
+
+========================================================
+Tanda Tangan Alumni: ____________________
+Tanggal Pengisian: ____________________
+========================================================

@@ -1,0 +1,113 @@
+{
+  "version": 1,
+  "skills": {
+    "accessibility": {
+      "source": "opencode/skills",
+      "sourceType": "github",
+      "skillPath": "skills/accessibility/SKILL.md",
+      "computedHash": "b1cfdee551a81ff3bbfe00e7a4aba0f3a565976e931ae5772ffc3db4aef207cd"
+    },
+    "ci-cd-and-automation": {
+      "source": "opencode/skills",
+      "sourceType": "github",
+      "skillPath": "skills/ci-cd-and-automation/SKILL.md",
+      "computedHash": "78e4183e1b31b557ef367cb6cee25bbe31c200e3b5dd1fe9df415f271b185dc9"
+    },
+    "database-migration": {
+      "source": "opencode/skills",
+      "sourceType": "github",
+      "skillPath": "skills/database-migration/SKILL.md",
+      "computedHash": "991bb37568062e61c2e011b67af43bef8ce5fbd037eedd0a35332f943eaf4f5a"
+    },
+    "deploy-to-vercel": {
+      "source": "vercel/skills",
+      "sourceType": "github",
+      "skillPath": "skills/deploy-to-vercel/SKILL.md",
+      "computedHash": "cfcc3dd479ab2e0ae721ddf39b8af84d977321487672f1487c8d6855f576927b"
+    },
+    "design-taste-frontend": {
+      "source": "leonxlnx/taste-skill",
+      "sourceType": "github",
+      "skillPath": "skills/taste-skill/SKILL.md",
+      "computedHash": "899b84384f74f540ea5284d9b2e9234e050998b42eacc805410b518d4226c0b3"
+    },
+    "frontend-design": {
+      "source": "anthropics/skills",
+      "sourceType": "github",
+      "skillPath": "skills/frontend-design/SKILL.md",
+      "computedHash": "93f53fd1c0352d3d7ec17b8f73d7351bf76f4821e55d123c9d2abc2c53ba48e4"
+    },
+    "git-workflow": {
+      "source": "opencode/skills",
+      "sourceType": "github",
+      "skillPath": "skills/git-workflow/SKILL.md",
+      "computedHash": "dee8a61e3a227648be564fc30b200d40a2a9f03f4fa6aca9a6614d1b2577d62b"
+    },
+    "react-nextjs-development": {
+      "source": "opencode/skills",
+      "sourceType": "github",
+      "skillPath": "skills/react-nextjs-development/SKILL.md",
+      "computedHash": "53b531757dcdbb4919b98ca630ab51a9376c83d1b88bccf13bd00d97ddc53707"
+    },
+    "review": {
+      "source": "opencode/skills",
+      "sourceType": "github",
+      "skillPath": "skills/review/SKILL.md",
+      "computedHash": "143a9baa874edce4357233d41a828ea48edfa28ae11c9ac73a2aedf4ee005000"
+    },
+    "security-and-hardening": {
+      "source": "opencode/skills",
+      "sourceType": "github",
+      "skillPath": "skills/security-and-hardening/SKILL.md",
+      "computedHash": "f525f7ba9b659fc3b9c7ec679b291948995559385848d74c3d0a115e621d2b40"
+    },
+    "shadcn": {
+      "source": "shadcn/ui",
+      "sourceType": "github",
+      "skillPath": "skills/shadcn/SKILL.md",
+      "computedHash": "0dc0edeeaec2ae491ae506806517866a3f9bd48d04e0458feb37e0252862891f"
+    },
+    "supabase-postgres-best-practices": {
+      "source": "supabase/agent-skills",
+      "sourceType": "github",
+      "skillPath": "skills/supabase-postgres-best-practices/SKILL.md",
+      "computedHash": "3639bed1f40b3fbadae79fee631c42c89b2d1f5c30b05d5aa3cca06422a6bbbc"
+    },
+    "tdd": {
+      "source": "opencode/skills",
+      "sourceType": "github",
+      "skillPath": "skills/tdd/SKILL.md",
+      "computedHash": "95f66cc273f0dff4919d4251cd6572f0029cd551167d38024b4867f6b2816eba"
+    },
+    "testing-expert": {
+      "source": "opencode/skills",
+      "sourceType": "github",
+      "skillPath": "skills/testing-expert/SKILL.md",
+      "computedHash": "4f0700e55ec99e49a40ba39d214468765b0cf628f30c8cf0c58fef24e7bce656"
+    },
+    "ui-ux-pro-max": {
+      "source": "nextlevelbuilder/ui-ux-pro-max-skill",
+      "sourceType": "github",
+      "skillPath": ".claude/skills/ui-ux-pro-max/SKILL.md",
+      "computedHash": "6337038fe1fe6bbe1b9f252ab678ee575859190bab6f0f246f4061824eb40875"
+    },
+    "vercel-react-best-practices": {
+      "source": "vercel/skills",
+      "sourceType": "github",
+      "skillPath": "skills/vercel-react-best-practices/SKILL.md",
+      "computedHash": "71ed7794962fa6e803ee83030517b5b93a9f70fbfeb431ec4535c5480a8d8355"
+    },
+    "web-design-guidelines": {
+      "source": "vercel-labs/agent-skills",
+      "sourceType": "github",
+      "skillPath": "skills/web-design-guidelines/SKILL.md",
+      "computedHash": "f3bc47f890f42a44db1007ab390709ec368e4b8c089baee6b0007182236ac474"
+    },
+    "webapp-testing": {
+      "source": "opencode/skills",
+      "sourceType": "github",
+      "skillPath": "skills/webapp-testing/SKILL.md",
+      "computedHash": "8bc27790f6e6dfc2bfa6692326d4518baacf6a31dcc646d963c729adad2f7e34"
+    }
+  }
+}
