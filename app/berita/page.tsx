@@ -5,8 +5,16 @@ import { ContentImage } from '@/components/landing/content-image'
 import type { Berita } from '@/types/database'
 
 export const metadata = {
-  title: 'Info & Berita — UNIKOM',
-  description: 'Update terbaru seputar Alumni STMIK AMIKOM Surakarta. Berita akademik, karir, kampus, dan teknologi.',
+  title: 'Info & Berita Alumni — UNIKOM STMIK AMIKOM Surakarta',
+  description: 'Update terbaru seputar Alumni STMIK AMIKOM Surakarta. Berita akademik, peluang karir, kabar kampus, dan perkembangan teknologi.',
+  alternates: {
+    canonical: '/berita',
+  },
+  openGraph: {
+    title: 'Info & Berita Alumni — UNIKOM STMIK AMIKOM Surakarta',
+    description: 'Update berita, agenda, dan informasi seputar karir dan alumni STMIK AMIKOM Surakarta.',
+    url: '/berita',
+  },
 }
 
 export default async function BeritaPage() {

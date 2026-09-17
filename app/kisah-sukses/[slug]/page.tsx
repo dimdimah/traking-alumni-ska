@@ -5,6 +5,7 @@ import { MessageCircle, Mail } from 'lucide-react'
 import { notFound } from 'next/navigation'
 import type { KisahSukses } from '@/types/database'
 
+const SITE_URL = process.env.NEXT_PUBLIC_SITE_URL || 'https://alumni-amikomsolo.site'
 const AVATAR_FALLBACK = 'https://images.unsplash.com/photo-1506794778202-cad84cf45f1d?auto=format&fit=crop&q=80&w=150&h=150'
 
 function slugify(text: string): string {
@@ -18,25 +19,47 @@ function slugify(text: string): string {
 
 export async function generateMetadata({ params }: { params: { slug: string } }) {
   const supabase = await createClient()
-  const { data } = await supabase
+  const { data: items } = await supabase
     .from('kisah_sukses')
-    .select('nama_alumni, kutipan, foto_url, cerita')
+    .select('nama_alumni, kutipan, foto_url, cerita, prodi, posisi_sekarang, perusahaan')
     .eq('status', 'published')
-    .single()
 
-  const story = data as Pick<KisahSukses, 'nama_alumni' | 'kutipan' | 'foto_url' | 'cerita'> | null
+  const all = (items ?? []) as Pick<KisahSukses, 'nama_alumni' | 'kutipan' | 'foto_url' | 'cerita' | 'prodi' | 'posisi_sekarang' | 'perusahaan'>[]
+  const story = all.find((item) => slugify(item.nama_alumni) === params.slug) ?? null
 
   if (!story) {
     return { title: 'Kisah Sukses Tidak Ditemukan — UNIKOM' }
   }
 
+  const pageUrl = `${SITE_URL}/kisah-sukses/${params.slug}`
+  const ogImage = story.foto_url || `${SITE_URL}/api/og`
+
   return {
-    title: `Kisah Sukses ${story.nama_alumni} — UNIKOM`,
+    title: `Kisah Sukses ${story.nama_alumni} (${story.posisi_sekarang} di ${story.perusahaan}) — UNIKOM`,
     description: story.kutipan,
+    alternates: {
+      canonical: pageUrl,
+    },
     openGraph: {
-      title: `Kisah Sukses ${story.nama_alumni}`,
+      type: 'article',
+      locale: 'id_ID',
+      url: pageUrl,
+      title: `Kisah Sukses ${story.nama_alumni} — Alumni AMIKOM Surakarta`,
       description: story.kutipan,
-      images: story.foto_url ? [story.foto_url] : [],
+      images: [
+        {
+          url: ogImage,
+          width: 1200,
+          height: 630,
+          alt: `Kisah Sukses ${story.nama_alumni}`,
+        },
+      ],
+    },
+    twitter: {
+      card: 'summary_large_image',
+      title: `Kisah Sukses ${story.nama_alumni} — UNIKOM`,
+      description: story.kutipan,
+      images: [ogImage],
     },
   }
 }
@@ -70,8 +93,41 @@ export default async function KisahSuksesDetailPage({ params }: { params: { slug
     }
   }
 
+  const storyJsonLd = {
+    '@context': 'https://schema.org',
+    '@type': 'Article',
+    headline: `Kisah Sukses ${story.nama_alumni}: ${story.posisi_sekarang} di ${story.perusahaan}`,
+    description: story.kutipan,
+    image: story.foto_url ? [story.foto_url] : [`${SITE_URL}/logo-amikom-surakarta-1.png`],
+    author: {
+      '@type': 'Person',
+      name: story.nama_alumni,
+      jobTitle: story.posisi_sekarang,
+      worksFor: {
+        '@type': 'Organization',
+        name: story.perusahaan,
+      },
+    },
+    publisher: {
+      '@type': 'Organization',
+      name: 'STMIK AMIKOM Surakarta',
+      logo: {
+        '@type': 'ImageObject',
+        url: `${SITE_URL}/logo-amikom-surakarta-1.png`,
+      },
+    },
+    mainEntityOfPage: {
+      '@type': 'WebPage',
+      '@id': `${SITE_URL}/kisah-sukses/${params.slug}`,
+    },
+  }
+
   return (
     <>
+      <script
+        type="application/ld+json"
+        dangerouslySetInnerHTML={{ __html: JSON.stringify(storyJsonLd) }}
+      />
       <LandingNavbar variant="public" isLoggedIn={isLoggedIn} dashboardHref={dashboardHref} />
       <section className="bg-amikom-pearl pt-[100px] pb-[80px] lg:pt-[120px] lg:pb-[120px] scroll-mt-20">
         <div className="mx-auto max-w-[780px] px-6 lg:px-12">
@@ -135,7 +191,7 @@ export default async function KisahSuksesDetailPage({ params }: { params: { slug
 }
 
 function ShareButtons({ title, slug }: { title: string; slug: string }) {
-  const url = `${process.env.NEXT_PUBLIC_SITE_URL || 'https://sitrack.amikomsolo.ac.id'}/kisah-sukses/${slug}`
+  const url = `${SITE_URL}/kisah-sukses/${slug}`
   const encodedUrl = encodeURIComponent(url)
   const encodedTitle = encodeURIComponent(title)
 
@@ -199,3 +255,4 @@ function XIcon({ className }: { className?: string }) {
     </svg>
   )
 }
+

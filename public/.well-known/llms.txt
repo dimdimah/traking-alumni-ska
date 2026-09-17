@@ -1,0 +1,30 @@
+# UNIKOM — Portal Alumni & Tracer Study STMIK AMIKOM Surakarta
+
+> Portal Resmi Alumni dan Sistem Pelacakan Jejak Karir (Tracer Study) STMIK AMIKOM Surakarta.
+
+## Informasi Utama
+- **Nama Platform**: UNIKOM — Portal Alumni STMIK AMIKOM Surakarta
+- **Institusi**: STMIK AMIKOM Surakarta / Universitas AMIKOM Surakarta
+- **Lokasi Kampus**: Surakarta, Jawa Tengah, Indonesia
+- **Website Utama**: https://alumni-amikomsolo.site
+- **Situs Resmi Kampus**: https://solo.amikom.ac.id
+- **Bahasa**: Bahasa Indonesia
+
+## Halaman Publik
+- [Beranda / Landing Page](https://alumni-amikomsolo.site/): Informasi umum, verifikasi alumni, pencarian karir, galeri wisuda, dan FAQ.
+- [Kabar & Berita Alumni](https://alumni-amikomsolo.site/berita): Artikel berita, pengumuman kampus, agenda alumni, dan update teknologi.
+- [Sertifikasi Profesi](https://alumni-amikomsolo.site/sertifikasi): Informasi sertifikasi keahlian IT & industri yang direkomendasikan bagi lulusan.
+- [Portal Karir / Login](https://alumni-amikomsolo.site/login): Akses masuk untuk alumni dan administrator.
+- [Peta Situs (Sitemap)](https://alumni-amikomsolo.site/sitemap.xml): Daftar lengkap URL publik yang terindeks.
+
+## Fitur Utama Platform
+1. **Tracer Study Terintegrasi Dikti**: Formulir kuesioner multi-bagian untuk akreditasi kampus.
+2. **Career Center & Rekomendasi Kerja**: Rekomendasi lowongan kerja berdasarkan relevansi profil alumni.
+3. **Pembuat CV Otomatis**: Generate CV ATS-Friendly format PDF dalam bahasa ID & EN.
+4. **Verifikasi Alumni**: Pencarian cepat status lulusan berdasarkan NIM atau Nama.
+5. **Direktori Jaringan Alumni**: Wadah networking antar angkatan.
+
+## Kontak Institusi
+- **Nama Institusi**: STMIK AMIKOM Surakarta
+- **Website Resmi**: https://solo.amikom.ac.id
+- **Domain Portal**: https://alumni-amikomsolo.site

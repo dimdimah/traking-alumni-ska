@@ -1,43 +1,41 @@
-# SITRACK — Sistem Informasi Track Record Alumni
+# UNIKOM — Portal Alumni & Tracer Study STMIK AMIKOM Surakarta
 
-## About
-SITRACK is the official alumni tracer study platform for Universitas Amikom Surakarta (STMIK Amikom Surakarta). It is a web-based system designed to track career records, contributions, and developments of graduates.
+> Portal Resmi Alumni dan Sistem Pelacakan Jejak Karir (Tracer Study) STMIK AMIKOM Surakarta.
 
-## Key Information
-- **Full Name**: Sistem Informasi Track Record Alumni (SITRACK)
-- **Institution**: Universitas Amikom Surakarta (STMIK Amikom Surakarta)
-- **Location**: Surakarta, Jawa Tengah, Indonesia
-- **Website**: https://sitrack.amikomsolo.ac.id
-- **Official University Site**: https://solo.amikom.ac.id
+## Ringkasan Proyek
+UNIKOM (sebelumnya dikenal sebagai SITRACK) adalah platform digital resmi yang dikembangkan untuk mengelola direktori alumni, kuesioner tracer study akreditasi Dikti, pusat karir terkurasi, serta verifikasi keaslian lulusan STMIK AMIKOM Surakarta (Universitas AMIKOM Surakarta).
 
-## Purpose
-SITRACK serves as a tracer study system for:
-1. Tracking alumni career records and employment history after graduation
-2. Collecting questionnaire data for accreditation and curriculum improvement
-3. Providing a curated career center with job opportunities for alumni
-4. Generating analytics and reports on employment rates, salary distribution, and field matching
+## Informasi Utama
+- **Nama Platform**: UNIKOM — Portal Alumni STMIK AMIKOM Surakarta
+- **Institusi**: STMIK AMIKOM Surakarta / Universitas AMIKOM Surakarta
+- **Lokasi Kampus**: Surakarta, Jawa Tengah, Indonesia
+- **Website Utama**: https://alumni-amikomsolo.site
+- **Situs Resmi Kampus**: https://solo.amikom.ac.id
+- **Bahasa**: Bahasa Indonesia
 
-## Features
-- **Track Record Management**: Alumni can manage their career history and work experiences
-- **Tracer Study Questionnaires**: Structured questionnaires for accreditation data collection
-- **Career Center**: Curated job opportunities specifically for Amikom alumni
-- **Admin Dashboard**: Statistics, user management, and bulk data import via CSV
-- **Analytics & Reporting**: Employment rate, response rate, field match statistics
-- **Role-Based Access Control (RBAC)**: Secure data access with Row-Level Security
+## Halaman Publik
+- [Beranda / Landing Page](https://alumni-amikomsolo.site/): Informasi umum, verifikasi alumni, pencarian karir, galeri wisuda, dan FAQ.
+- [Kabar & Berita Alumni](https://alumni-amikomsolo.site/berita): Artikel berita, pengumuman kampus, agenda alumni, dan update teknologi.
+- [Sertifikasi Profesi](https://alumni-amikomsolo.site/sertifikasi): Informasi sertifikasi keahlian IT & industri yang direkomendasikan bagi lulusan.
+- [Portal Karir / Login](https://alumni-amikomsolo.site/login): Akses masuk untuk alumni dan administrator.
+- [Peta Situs (Sitemap)](https://alumni-amikomsolo.site/sitemap.xml): Daftar lengkap URL publik yang terindeks.
 
-## Target Users
-- Alumni of STMIK Amikom Surakarta
-- University administrators managing tracer study data
-- Accreditation bodies requiring employment statistics
+## Fitur Utama Platform
+1. **Tracer Study Terintegrasi Dikti**: Formulir kuesioner multi-bagian (identitas responden, pertanyaan wajib, dan opsional) dengan conditional branching untuk akreditasi kampus.
+2. **Career Center & Rekomendasi Kerja Cerdas**: Lowongan kerja terkurasi dengan sistem Content-Based Filtering (TF-IDF & Cosine Similarity) yang mencocokkan profil alumni (prodi, keahlian, minat karir, lokasi).
+3. **Pembuat CV Otomatis (ATS-Friendly)**: Pembuatan CV profesional otomatis berformat PDF standar ATS dalam 2 bahasa (Indonesia dan Inggris).
+4. **Verifikasi Ijazah & Alumni**: Fitur pencarian instan berdasarkan Nama atau Nomor Induk Mahasiswa (NIM) untuk memastikan keaslian lulusan AMIKOM Surakarta.
+5. **Direktori Jaringan Alumni**: Wadah networking antar alumni berdasarkan tahun angkatan dan bidang pekerjaan.
+6. **Statistik & Analitik Admin**: Laporan serapan kerja alumni, keselarasan bidang kerja, estimasi gaji, dan waktu tunggu kerja lulusan.
 
-## Technology Stack
-- Next.js 14+ (App Router)
-- TypeScript
-- Supabase (Authentication & Database)
-- Tailwind CSS
-- Row-Level Security (RLS) for data protection
+## Program Studi yang Terdaftar
+- S1 Informatika
+- S1 Teknologi Informasi
+- D3 Manajemen Informatika
+- D3 Komputerisasi Akuntansi
 
-## Contact
-- **University**: STMIK Amikom Surakarta
-- **Address**: Surakarta, Jawa Tengah, Indonesia
-- **Website**: https://solo.amikom.ac.id
+## Kontak & Institusi
+- **Nama Institusi**: STMIK AMIKOM Surakarta
+- **Kota**: Surakarta, Jawa Tengah, Indonesia
+- **Website Resmi**: https://solo.amikom.ac.id
+- **Domain Portal Alumni**: https://alumni-amikomsolo.site

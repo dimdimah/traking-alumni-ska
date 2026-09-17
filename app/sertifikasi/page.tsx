@@ -14,8 +14,16 @@ const KATEGORI_FALLBACK: Record<string, string> = {
 }
 
 export const metadata = {
-  title: 'Sertifikasi IT — UNIKOM',
-  description: 'Tingkatkan daya saing Anda dengan sertifikasi profesional yang direkomendasikan untuk lulusan AMIKOM.',
+  title: 'Sertifikasi IT & Profesi — UNIKOM STMIK AMIKOM Surakarta',
+  description: 'Tingkatkan daya saing dan keahlian Anda dengan sertifikasi profesional industri yang direkomendasikan untuk lulusan AMIKOM Surakarta.',
+  alternates: {
+    canonical: '/sertifikasi',
+  },
+  openGraph: {
+    title: 'Sertifikasi IT & Profesi — UNIKOM STMIK AMIKOM Surakarta',
+    description: 'Rekomendasi program sertifikasi IT, Cloud, Programming, Data Science, dan Keamanan Siber bagi alumni STMIK AMIKOM Surakarta.',
+    url: '/sertifikasi',
+  },
 }
 
 export default async function SertifikasiPage() {
