@@ -6,7 +6,7 @@ import { ContentImage } from '@/components/landing/content-image'
 import { notFound } from 'next/navigation'
 import type { Berita } from '@/types/database'
 
-const SITE_URL = process.env.NEXT_PUBLIC_SITE_URL || 'https://sitrack.amikomsolo.ac.id'
+const SITE_URL = process.env.NEXT_PUBLIC_SITE_URL || 'https://alumni-amikomsolo.site'
 
 function FacebookIcon({ className }: { className?: string }) {
   return (
@@ -78,24 +78,48 @@ export async function generateMetadata({ params }: { params: { slug: string } })
   const supabase = await createClient()
   const { data } = await supabase
     .from('berita')
-    .select('judul, ringkasan, gambar_url')
+    .select('judul, ringkasan, gambar_url, tanggal')
     .eq('slug', params.slug)
     .eq('status', 'published')
     .single()
 
-  const berita = data as Pick<Berita, 'judul' | 'ringkasan' | 'gambar_url'> | null
+  const berita = data as Pick<Berita, 'judul' | 'ringkasan' | 'gambar_url' | 'tanggal'> | null
 
   if (!berita) {
     return { title: 'Berita Tidak Ditemukan — UNIKOM' }
   }
 
+  const pageUrl = `${SITE_URL}/berita/${params.slug}`
+  const ogImage = berita.gambar_url || `${SITE_URL}/api/og`
+
   return {
     title: `${berita.judul} — UNIKOM`,
     description: berita.ringkasan,
+    alternates: {
+      canonical: pageUrl,
+    },
     openGraph: {
-      title: berita.judul,
+      type: 'article',
+      locale: 'id_ID',
+      url: pageUrl,
+      title: `${berita.judul} — UNIKOM`,
       description: berita.ringkasan,
-      images: berita.gambar_url ? [berita.gambar_url] : [],
+      publishedTime: berita.tanggal,
+      authors: ['STMIK AMIKOM Surakarta'],
+      images: [
+        {
+          url: ogImage,
+          width: 1200,
+          height: 630,
+          alt: berita.judul,
+        },
+      ],
+    },
+    twitter: {
+      card: 'summary_large_image',
+      title: `${berita.judul} — UNIKOM`,
+      description: berita.ringkasan,
+      images: [ogImage],
     },
   }
 }
@@ -130,8 +154,39 @@ export default async function BeritaDetailPage({ params }: { params: { slug: str
     }
   }
 
+  const articleJsonLd = {
+    '@context': 'https://schema.org',
+    '@type': 'NewsArticle',
+    headline: berita.judul,
+    description: berita.ringkasan,
+    image: berita.gambar_url ? [berita.gambar_url] : [`${SITE_URL}/logo-amikom-surakarta-1.png`],
+    datePublished: berita.tanggal,
+    dateModified: berita.updated_at || berita.tanggal,
+    author: {
+      '@type': 'Organization',
+      name: 'STMIK AMIKOM Surakarta',
+      url: 'https://solo.amikom.ac.id',
+    },
+    publisher: {
+      '@type': 'Organization',
+      name: 'STMIK AMIKOM Surakarta',
+      logo: {
+        '@type': 'ImageObject',
+        url: `${SITE_URL}/logo-amikom-surakarta-1.png`,
+      },
+    },
+    mainEntityOfPage: {
+      '@type': 'WebPage',
+      '@id': `${SITE_URL}/berita/${params.slug}`,
+    },
+  }
+
   return (
     <>
+      <script
+        type="application/ld+json"
+        dangerouslySetInnerHTML={{ __html: JSON.stringify(articleJsonLd) }}
+      />
       <LandingNavbar variant="public" isLoggedIn={isLoggedIn} dashboardHref={dashboardHref} />
       <section className="bg-amikom-pearl pt-[100px] pb-[80px] lg:pt-[120px] lg:pb-[120px] scroll-mt-20">
         <div className="mx-auto max-w-[780px] px-6 lg:px-12">
@@ -180,3 +235,4 @@ export default async function BeritaDetailPage({ params }: { params: { slug: str
     </>
   )
 }
+

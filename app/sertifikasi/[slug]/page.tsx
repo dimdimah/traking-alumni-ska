@@ -7,6 +7,8 @@ import { ExternalLink, MessageCircle, Mail } from 'lucide-react'
 import { notFound } from 'next/navigation'
 import type { Sertifikasi } from '@/types/database'
 
+const SITE_URL = process.env.NEXT_PUBLIC_SITE_URL || 'https://alumni-amikomsolo.site'
+
 const KATEGORI_FALLBACK: Record<string, string> = {
   'IT & Networking': 'https://images.unsplash.com/photo-1519389950473-47ba0277781c?auto=format&fit=crop&q=80&w=600',
   Programming: 'https://images.unsplash.com/photo-1523240795612-9a054b0db644?auto=format&fit=crop&q=80&w=600',
@@ -20,24 +22,46 @@ export async function generateMetadata({ params }: { params: { slug: string } })
   const supabase = await createClient()
   const { data } = await supabase
     .from('sertifikasi')
-    .select('nama, deskripsi, icon_url')
+    .select('nama, deskripsi, icon_url, kategori, penyelenggara')
     .eq('slug', params.slug)
     .eq('status', 'published')
     .single()
 
-  const cert = data as Pick<Sertifikasi, 'nama' | 'deskripsi' | 'icon_url'> | null
+  const cert = data as Pick<Sertifikasi, 'nama' | 'deskripsi' | 'icon_url' | 'kategori' | 'penyelenggara'> | null
 
   if (!cert) {
     return { title: 'Sertifikasi Tidak Ditemukan — UNIKOM' }
   }
 
+  const pageUrl = `${SITE_URL}/sertifikasi/${params.slug}`
+  const ogImage = cert.icon_url || `${SITE_URL}/api/og`
+
   return {
-    title: `${cert.nama} — UNIKOM`,
+    title: `${cert.nama} — Sertifikasi IT UNIKOM`,
     description: cert.deskripsi,
+    alternates: {
+      canonical: pageUrl,
+    },
     openGraph: {
-      title: cert.nama,
+      type: 'website',
+      locale: 'id_ID',
+      url: pageUrl,
+      title: `${cert.nama} — Sertifikasi ${cert.penyelenggara}`,
       description: cert.deskripsi,
-      images: cert.icon_url ? [cert.icon_url] : [],
+      images: [
+        {
+          url: ogImage,
+          width: 1200,
+          height: 630,
+          alt: cert.nama,
+        },
+      ],
+    },
+    twitter: {
+      card: 'summary_large_image',
+      title: `${cert.nama} — UNIKOM`,
+      description: cert.deskripsi,
+      images: [ogImage],
     },
   }
 }
@@ -72,8 +96,26 @@ export default async function SertifikasiDetailPage({ params }: { params: { slug
     }
   }
 
+  const certJsonLd = {
+    '@context': 'https://schema.org',
+    '@type': 'Course',
+    name: cert.nama,
+    description: cert.deskripsi,
+    provider: {
+      '@type': 'Organization',
+      name: cert.penyelenggara,
+    },
+    educationalCredentialAwarded: cert.nama,
+    courseCategory: cert.kategori,
+    url: `${SITE_URL}/sertifikasi/${params.slug}`,
+  }
+
   return (
     <>
+      <script
+        type="application/ld+json"
+        dangerouslySetInnerHTML={{ __html: JSON.stringify(certJsonLd) }}
+      />
       <LandingNavbar variant="public" isLoggedIn={isLoggedIn} dashboardHref={dashboardHref} />
       <section className="bg-amikom-pearl pt-[100px] pb-[80px] lg:pt-[120px] lg:pb-[120px] scroll-mt-20">
         <div className="mx-auto max-w-[780px] px-6 lg:px-12">
@@ -155,7 +197,7 @@ export default async function SertifikasiDetailPage({ params }: { params: { slug
 }
 
 function ShareButtons({ title, slug }: { title: string; slug: string }) {
-  const url = `${process.env.NEXT_PUBLIC_SITE_URL || 'https://sitrack.amikomsolo.ac.id'}/sertifikasi/${slug}`
+  const url = `${SITE_URL}/sertifikasi/${slug}`
   const encodedUrl = encodeURIComponent(url)
   const encodedTitle = encodeURIComponent(title)
 
@@ -219,3 +261,4 @@ function XIcon({ className }: { className?: string }) {
     </svg>
   )
 }
+

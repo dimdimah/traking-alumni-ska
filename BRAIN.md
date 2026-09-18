@@ -62,6 +62,7 @@
 11. **Rekomendasi lowongan:** Content-Based Filtering murni dengan preprocessing, TF-IDF, dan Cosine Similarity; tanpa Collaborative Filtering, rule-based salary/location/type scoring, IPK, expected salary, atau bobot manual.
 12. **Kriteria rekomendasi:** program_studi, skills, track_records.position + track_records.description, certifications, job_interests, preferred_location, dan preferred_type.
 13. **Lokasi profil:** `location` tetap domisili; `preferred_location` adalah preferensi kerja. `education_level` dipertahankan untuk legacy/Tracer Study, sedangkan `program_studi` menjadi kriteria rekomendasi.
+14. **Netlify Build & Deploy Safety:** Setiap agent WAJIB menjalankan pre-flight verification (`npx tsc --noEmit`, `npx next lint`, `npm run build`) sebelum menyelesaikan task. Jangan commit file `.env` / API secrets, jangan tinggalkan temporary scripts di root, dan pastikan seluruh public domain/images terdaftar di config.
 
 ---
 
@@ -299,6 +300,9 @@ isQuestionVisible(q, questions, answers) // status (order 100) + sub-branch "Ya/
 | Reload data lebih cepat — ekstrak profile cache ke module bersama `lib/profile-cache.ts` (layout + profile/lowongan/rekomendasi page memakainya, form profile terisi instan dari sessionStorage, hanya 1 query `track_records` saat cache fresh); hapus double-fetch `profiles.skills` di career page (`RekomendasiCard` terima prop `userSkills`, bukan re-query); skills lowongan/rekomendasi dibaca sinkron dari cache (fallback fetch jika cache kosong) | `lib/profile-cache.ts`, `app/(protected)/layout.tsx`, `app/(protected)/dashboard/profile/page.tsx`, `app/(protected)/dashboard/career/page.tsx`, `app/(protected)/user/lowongan/page.tsx`, `app/(protected)/user/rekomendasi/page.tsx` | ✅ |
 | Fix & upgrade Galeri Foto Wisuda landing page — ganti strip statis/terputus dengan dual-track infinite seamless marquee (`WisudaGallery`), animasi CSS GPU-accelerated (`translate3d`), pause on hover, hover card micro-interaction (`scale-105` + `border-white/20`), ukuran foto diperbesar (135px desktop / 105px mobile + `rounded-xl`), mask edge fade, proteksi dari reduced-motion freeze di Windows, isi penuh layar ultra-wide/4K | `components/landing/wisuda-gallery.tsx`, `app/globals.css`, `app/page.tsx` | ✅ |
 | Pre-deployment Netlify readiness audit — fix ESLint warning di `admin/career-center`, CSP `img-src` tambah `images.unsplash.com`, validasi `.nvmrc` (Node 20), build verification (38/38 static/dynamic routes 0 error), audit environment variables & Netlify plugin config | `app/(protected)/admin/career-center/page.tsx`, `next.config.mjs`, `netlify.toml` | ✅ |
+| Setup SEO & GEO (AI Search) untuk https://alumni-amikomsolo.site/ — dynamic XML sitemap (query DB berita/sertifikasi/kisah-sukses), robots.txt multi-AI crawlers (GPTBot, ClaudeBot, PerplexityBot, Google-Extended, ByteSpider, dll.), Web App Manifest (`app/manifest.ts`), JSON-LD schema (@graph CollegeOrUniversity, WebSite, WebApplication, NewsArticle, Course, Article), update `public/llms.txt` + `public/.well-known/llms.txt`, serta dukungan verification meta tags (Google/Bing/Yandex) | `app/layout.tsx`, `app/robots.ts`, `app/sitemap.ts`, `app/manifest.ts`, `public/llms.txt`, `public/.well-known/llms.txt`, `app/berita/[slug]/page.tsx`, `app/sertifikasi/[slug]/page.tsx`, `app/kisah-sukses/[slug]/page.tsx`, `.env.example` | ✅ |
+| Pembersihan dead files & verifikasi Netlify build — hapus `replace.mjs`, `install.cmd`, `contoh-import-user.csv`, validasi `npx tsc --noEmit` (0 error), `npx next lint` (0 error/warning), dan `npm run build` (39/39 routes berhasil dikompilasi). Update AGENTS.md & BRAIN.md standar wajib pre-flight check sebelum selesai task | `AGENTS.md`, `BRAIN.md`, root | ✅ |
+
 
 ### Fitur Baru — Juli & Agustus 2026
 - **History Log Admin & Excel Export:** Tabel `admin_activity_logs` (migration 013) mencatat aktivitas admin, sheet Riwayat & Info Export di semua file Excel, tab "Riwayat Log" di kelola kuesioner admin menampilkan log pembaruan data alumni + tombol Unduh XLS untuk export riwayat log. Export jawaban kuesioner kini menyertakan sheet log pembaruan per hari (dari `tracer_study_history`) dan memakai `createAdminClient()` agar semua 65 jawaban terunduh (sebelumnya terblokir RLS `tracer_study_answers`).
@@ -345,11 +349,14 @@ isQuestionVisible(q, questions, answers) // status (order 100) + sub-branch "Ya/
 
 ---
 
-## VI. BUILD COMMANDS
+## VI. BUILD COMMANDS & PRE-DEPLOYMENT VERIFICATION
 
+Sebelum commit / deploy ke Netlify, jalankan perintah pre-flight berikut:
 ```bash
-npm run dev          # Development
-npx tsc --noEmit     # TypeScript check
+npx tsc --noEmit     # TypeScript typecheck (0 error)
+npx next lint        # ESLint check (0 warning/error)
+npm run build        # Production build verification (39/39 routes berhasil)
+npm run dev          # Development server
 npx jest             # Test suite
-npm run build        # Production build
 ```
+
