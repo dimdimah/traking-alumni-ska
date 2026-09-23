@@ -60,7 +60,7 @@ const adminNav: NavItem[] = [
   { href: '/admin/alumni', label: 'Manajemen Alumni', icon: <Users className={iconClass} />, action: 'alumni.manage' },
   { href: '/admin/kuesioner', label: 'Tracer Study', icon: <ClipboardList className={iconClass} />, action: 'question.manage' },
   // { href: '/admin/survey-perusahaan', label: 'Survey Perusahaan', icon: <Building2 className={iconClass} />, action: 'survey.view' },
-  { href: '/admin/roles', label: 'Role & Akses', icon: <ShieldCheck className={iconClass} />, action: 'role.manage' },
+  // { href: '/admin/roles', label: 'Role & Akses', icon: <ShieldCheck className={iconClass} />, action: 'role.manage' },
   {
     href: '/admin/content',
     label: 'Manajemen Konten',
