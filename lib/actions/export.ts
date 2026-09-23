@@ -1,23 +1,14 @@
 'use server'
 
-import { createClient } from '@/lib/supabase/server'
 import type { Profile } from '@/types/database'
 import { logAdminActivity } from '@/lib/actions/admin-logs'
+import { requirePermission } from '@/lib/permissions/guards'
+import { PERMISSIONS, roleLabel } from '@/lib/permissions'
 
 export async function exportAlumniToExcel(): Promise<string> {
   const XLSX = await import('xlsx-js-style')
 
-  const supabase = await createClient()
-  const { data: { user } } = await supabase.auth.getUser()
-  if (!user) throw new Error('Unauthorized')
-
-  const { data: profile } = await supabase
-    .from('profiles')
-    .select('role')
-    .eq('id', user.id)
-    .single() as { data: { role: string } | null; error: unknown }
-
-  if (profile?.role !== 'super_user') throw new Error('Forbidden')
+  const { supabase } = await requirePermission(PERMISSIONS.EXPORT_RUN)
 
   const { data } = await supabase
     .from('profiles')
@@ -31,7 +22,7 @@ export async function exportAlumniToExcel(): Promise<string> {
     'Nama': p.full_name || '',
     'NIM': p.nim || '',
     'Tahun Lulus': p.graduation_year?.toString() || '',
-    'Role': p.role === 'super_user' ? 'Super User' : 'User',
+    'Role': roleLabel(p.role),
     'Telepon': p.phone || '',
     'Bergabung': p.created_at ? new Date(p.created_at).toLocaleDateString('id-ID') : '',
   }))
@@ -90,6 +81,8 @@ export async function exportAlumniToExcel(): Promise<string> {
 }
 
 export async function exportResponsesToExcel(angkatan: string): Promise<string> {
+  await requirePermission(PERMISSIONS.EXPORT_RUN)
+
   const XLSX = await import('xlsx-js-style')
   const { createAdminClient } = await import('@/lib/supabase/admin')
 
@@ -378,9 +371,9 @@ export async function exportResponsesToExcel(angkatan: string): Promise<string> 
 }
 
 export async function exportQuestionsToExcel(angkatan: string): Promise<string> {
-  const XLSX = await import('xlsx-js-style')
+  const { supabase } = await requirePermission(PERMISSIONS.EXPORT_RUN)
 
-  const supabase = await createClient()
+  const XLSX = await import('xlsx-js-style')
   const { data } = await supabase
     .from('tracer_study_questions')
     .select('id, question_text, question_type, options, is_active, display_order, angkatan')
@@ -458,6 +451,8 @@ export async function exportQuestionsToExcel(angkatan: string): Promise<string> 
 }
 
 export async function exportHistoryToExcel(angkatan: string): Promise<string> {
+  await requirePermission(PERMISSIONS.EXPORT_RUN)
+
   const XLSX = await import('xlsx-js-style')
   const { createAdminClient } = await import('@/lib/supabase/admin')
 
@@ -617,20 +612,10 @@ export async function exportHistoryToExcel(angkatan: string): Promise<string> {
 }
 
 export async function exportCompanySurveysToExcel(): Promise<string> {
+  await requirePermission(PERMISSIONS.EXPORT_RUN)
+
   const XLSX = await import('xlsx-js-style')
   const { createAdminClient } = await import('@/lib/supabase/admin')
-
-  const supabase = await createClient()
-  const { data: { user } } = await supabase.auth.getUser()
-  if (!user) throw new Error('Unauthorized')
-
-  const { data: profile } = await supabase
-    .from('profiles')
-    .select('role')
-    .eq('id', user.id)
-    .single() as { data: { role: string } | null; error: unknown }
-
-  if (profile?.role !== 'super_user') throw new Error('Forbidden')
 
   const adminClient = createAdminClient()
   const { data } = await adminClient

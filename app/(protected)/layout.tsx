@@ -4,6 +4,7 @@ import { useState, useEffect } from 'react'
 import { useRouter } from 'next/navigation'
 import { createClient } from '@/lib/supabase/client'
 import { getCachedProfile, setCachedProfile, clearCachedProfile } from '@/lib/profile-cache'
+import { getMyPermissions } from '@/lib/actions/permissions'
 import { Toaster } from 'sonner'
 import Navbar from '@/components/navbar'
 import DashboardSidebar from '@/components/dashboard-sidebar'
@@ -32,7 +33,21 @@ export default function ProtectedLayout({
   const [loading, setLoading] = useState(true)
   const [sidebarCollapsed, setSidebarCollapsed] = useState(false)
   const [mobileSidebarOpen, setMobileSidebarOpen] = useState(false)
+  const [allowedActions, setAllowedActions] = useState<string[] | null>(null)
   const isDesktop = useMediaQuery('(min-width: 768px)')
+
+  // Filter nav sidebar berdasar permission — hanya untuk role di luar
+  // super_user (unfiltered) & user murni (userNav), supaya zero overhead
+  // untuk kasus yang sudah ada.
+  useEffect(() => {
+    if (!profile) return
+    if (profile.role === 'super_user' || profile.role === 'user') return
+    let cancelled = false
+    getMyPermissions()
+      .then((actions) => { if (!cancelled) setAllowedActions(actions) })
+      .catch(() => { /* fail-open: nav tampil tanpa filter */ })
+    return () => { cancelled = true }
+  }, [profile])
 
   useEffect(() => {
     // Populate from cache immediately — render children tanpa blokir
@@ -92,6 +107,7 @@ export default function ProtectedLayout({
         onToggle={() => setSidebarCollapsed(!sidebarCollapsed)}
         mobileOpen={mobileSidebarOpen}
         onMobileClose={() => setMobileSidebarOpen(false)}
+        allowedActions={allowedActions}
       />
 
       <div

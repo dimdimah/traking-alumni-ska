@@ -1,19 +1,36 @@
 'use client'
 
-import { useState } from 'react'
+import { useEffect, useState } from 'react'
 import { useRouter } from 'next/navigation'
 import { addUser } from '@/lib/actions/alumni'
+import { getRoleOptions } from '@/lib/actions/permissions'
+import { roleLabel } from '@/lib/permissions'
+import type { RoleRow } from '@/types/database'
 
 export default function AddUserForm({ onSuccess }: { onSuccess?: () => void }) {
   const router = useRouter()
   const [name, setName] = useState('')
   const [email, setEmail] = useState('')
   const [password, setPassword] = useState('')
-  const [role, setRole] = useState<'user' | 'super_user'>('user')
+  const [role, setRole] = useState<string>('user')
+  const [roleOptions, setRoleOptions] = useState<RoleRow[]>([])
   const [graduationYear, setGraduationYear] = useState('')
   const [loading, setLoading] = useState(false)
   const [error, setError] = useState<string | null>(null)
   const [success, setSuccess] = useState(false)
+
+  // Opsi role: hardcoded super_user + user, digabung role custom dari tabel roles.
+  useEffect(() => {
+    let cancelled = false
+    getRoleOptions()
+      .then((rows) => { if (!cancelled) setRoleOptions(rows) })
+      .catch(() => { /* fallback: tetap tampil opsi hardcoded */ })
+    return () => { cancelled = true }
+  }, [])
+
+  const dynamicRoles = roleOptions.filter(
+    (r) => r.name !== 'super_user' && r.name !== 'user'
+  )
 
   async function handleSubmit(e: React.FormEvent<HTMLFormElement>) {
     e.preventDefault()
@@ -22,7 +39,7 @@ export default function AddUserForm({ onSuccess }: { onSuccess?: () => void }) {
     setSuccess(false)
 
     try {
-      const result = await addUser(email, password, name, graduationYear || null)
+      const result = await addUser(email, password, name, graduationYear || null, role)
 
       if (!result.success) {
         setError(result.error || 'Gagal menambah user')
@@ -120,12 +137,27 @@ export default function AddUserForm({ onSuccess }: { onSuccess?: () => void }) {
           </label>
           <select
             value={role}
-            onChange={(e) => setRole(e.target.value as 'user' | 'super_user')}
+            onChange={(e) => setRole(e.target.value)}
             className="w-full rounded-md border border-slate-200 bg-white px-3.5 py-2.5 text-sm text-slate-900 outline-none transition-colors focus:border-amikom-purple focus:ring-2 focus:ring-amikom-purple/20"
           >
-            <option value="user">User</option>
-            <option value="super_user">Super User</option>
+            <optgroup label="Role bawaan">
+              <option value="user">User (Alumni)</option>
+              <option value="super_user">Super User (Admin)</option>
+            </optgroup>
+            {dynamicRoles.length > 0 && (
+              <optgroup label="Role custom">
+                {dynamicRoles.map((r) => (
+                  <option key={r.name} value={r.name}>
+                    {roleLabel(r.name)}
+                    {r.description ? ` — ${r.description}` : ''}
+                  </option>
+                ))}
+              </optgroup>
+            )}
           </select>
+          <p className="text-[10px] text-slate-500 mt-1">
+            Role selain &quot;User&quot; memerlukan izin role.manage
+          </p>
         </div>
 
         <div className="space-y-1.5">

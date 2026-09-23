@@ -41,7 +41,10 @@ export async function middleware(request: NextRequest) {
       return NextResponse.redirect(new URL(redirectTo, request.url))
     }
 
-    if (pathname.startsWith('/super-user') || pathname.startsWith('/admin')) {
+    if (pathname.startsWith('/super-user')) {
+      // /admin TIDAK digate role di sini — RoleGuard berbasis permission
+      // (app/(protected)/admin/layout.tsx) yang menentukan, agar role custom
+      // dengan permission admin bisa masuk tanpa sync daftar permission di edge.
       if (role !== 'super_user') {
         return NextResponse.redirect(new URL('/dashboard', request.url))
       }

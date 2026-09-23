@@ -1,23 +1,18 @@
 'use client'
 
-import { useState, useEffect, useMemo, useCallback, useRef } from 'react'
-import { getCachedProfile } from '@/lib/profile-cache'
+import { useState, useEffect, useCallback, useRef } from 'react'
 import { getJobRecommendations } from '@/lib/actions/matching'
 import { PageHeader } from '@/components/ui/page-header'
 import { Badge } from '@/components/ui/badge'
 import { Modal } from '@/components/ui/modal'
-import { SkillSuggestions } from '@/components/skill-suggestions'
 import MatchDebugPanel from '@/components/debug/match-debug-panel'
 import type { MatchResult } from '@/types/database'
 
 
-function normalizeSkill(skill: string): string {
-  return skill.toLowerCase().trim()
-}
-
-function isSkillMatched(skill: string, userSkills: string[]): boolean {
-  const s = normalizeSkill(skill)
-  return userSkills.some((us) => normalizeSkill(us) === s)
+function scoreColor(percent: number) {
+  if (percent >= 70) return '#22c55e'
+  if (percent >= 40) return '#f59e0b'
+  return '#ef4444'
 }
 
 function ScoreBar({ score }: { score: number }) {
@@ -27,10 +22,7 @@ function ScoreBar({ score }: { score: number }) {
       <div className="flex-1 h-2 rounded-full bg-slate-100 overflow-hidden">
         <div
           className="h-full rounded-full transition-all duration-500"
-          style={{
-            width: `${percent}%`,
-            backgroundColor: percent >= 70 ? '#22c55e' : percent >= 40 ? '#f59e0b' : '#ef4444',
-          }}
+          style={{ width: `${percent}%`, backgroundColor: scoreColor(percent) }}
         />
       </div>
       <span className="text-sm font-semibold font-mono text-slate-900 w-10 text-right">
@@ -45,25 +37,10 @@ export default function RekomendasiPage() {
   const [loading, setLoading] = useState(true)
   const [refreshing, setRefreshing] = useState(false)
   const [selectedJob, setSelectedJob] = useState<MatchResult | null>(null)
-  const [sortBy, setSortBy] = useState<'score' | 'date'>('score')
   const [errorMsg, setErrorMsg] = useState<string | null>(null)
   const [debugOpen, setDebugOpen] = useState(false)
   const [debugAuto, setDebugAuto] = useState(false)
   const timerRef = useRef<ReturnType<typeof setInterval> | null>(null)
-  const [userSkills, setUserSkills] = useState<string[]>(() => {
-    const cached = getCachedProfile()
-    return cached?.skills && Array.isArray(cached.skills) ? cached.skills : []
-  })
-
-  useEffect(() => {
-    // skills diambil dari cache (layout sudah sync); jika kosong, ambil dari hasil rekomendasi pertama kali tanpa query tambahan
-    if (userSkills.length > 0) return
-    const cached = getCachedProfile()
-    if (cached?.skills && Array.isArray(cached.skills) && cached.skills.length > 0) {
-      setUserSkills(cached.skills)
-    }
-    // fallback: biarkan kosong — highlight skill tetap jalan setelah recommendations ter-load via profile di server
-  }, [userSkills.length])
 
   useEffect(() => {
     setDebugAuto(
@@ -108,22 +85,13 @@ export default function RekomendasiPage() {
     }
   }, [loadRecommendations])
 
-  // Memoize sort + counts agar tidak recompute tiap render (20 cards × filter 3×)
-  const sorted = useMemo(() => [...results].sort((a, b) => {
-    if (sortBy === 'score') return b.score - a.score
-    return new Date(b.job.created_at).getTime() - new Date(a.job.created_at).getTime()
-  }), [results, sortBy])
-
-  const highCount = useMemo(() => results.filter(r => r.score >= 0.7).length, [results])
-  const mediumCount = useMemo(() => results.filter(r => r.score >= 0.4 && r.score < 0.7).length, [results])
-
   return (
     <div className="page-container space-y-8 pb-8">
       <PageHeader
         icon={<span className="text-[11px]">★</span>}
         label="Rekomendasi Kerja"
         title="Rekomendasi Lowongan."
-        subtitle="Lowongan yang dipilih berdasarkan profil dan preferensi kamu."
+        subtitle="Lowongan dengan kecocokan tertinggi berdasarkan atribut profil kamu (program studi, skill, pengalaman kerja, sertifikasi, minat bidang, lokasi, dan tipe)."
         action={
           <div className="flex items-center gap-2">
             <span className="text-[11px] text-slate-400 shrink-0">
@@ -139,71 +107,11 @@ export default function RekomendasiPage() {
               disabled={refreshing}
               className="shrink-0 rounded-md border border-slate-200 bg-white px-3 py-1.5 text-[11px] font-medium text-slate-600 hover:border-slate-400 hover:text-slate-900 transition-all disabled:opacity-60"
             >
-              {refreshing ? '↻' : 'Segarkan'}
+              {refreshing ? '…' : 'Segarkan'}
             </button>
           </div>
         }
       />
-
-      {/* Sort controls */}
-      {!loading && results.length > 0 && (
-        <div className="flex items-center gap-3 animate-fade-in-up" style={{ animationDelay: '0.05s' }}>
-          <span className="text-xs font-mono text-slate-500">Urutkan:</span>
-          <button
-            onClick={() => setSortBy('score')}
-            className={`rounded-md px-3 py-1.5 text-xs font-medium font-mono transition-all ${
-              sortBy === 'score'
-                ? 'bg-amikom-purple text-white'
-                : 'border border-slate-200 bg-white text-slate-600 hover:border-slate-400'
-            }`}
-          >
-            Score Tertinggi
-          </button>
-          <button
-            onClick={() => setSortBy('date')}
-            className={`rounded-md px-3 py-1.5 text-xs font-medium font-mono transition-all ${
-              sortBy === 'date'
-                ? 'bg-amikom-purple text-white'
-                : 'border border-slate-200 bg-white text-slate-600 hover:border-slate-400'
-            }`}
-          >
-            Terbaru
-          </button>
-        </div>
-      )}
-
-      {/* Stats summary */}
-      {!loading && results.length > 0 && (
-        <div className="grid grid-cols-2 sm:grid-cols-3 gap-3 animate-fade-in-up" style={{ animationDelay: '0.08s' }}>
-          <div className="rounded-lg border border-slate-200 bg-white p-3 shadow-sm">
-            <div className="flex items-center justify-between">
-              <p className="font-mono text-2xl font-semibold text-slate-900">{results.length}</p>
-              <span className="text-[10px] font-mono uppercase tracking-wider text-slate-400">Total</span>
-            </div>
-            <p className="mt-0.5 text-xs font-medium text-slate-500">Total Match</p>
-          </div>
-
-          <div className="rounded-lg border border-emerald-200 bg-white p-3 shadow-sm">
-            <div className="flex items-center justify-between">
-              <p className="font-mono text-2xl font-semibold text-emerald-600">
-                {highCount}
-              </p>
-              <span className="text-[10px] font-mono uppercase tracking-wider text-emerald-500">Tinggi</span>
-            </div>
-            <p className="mt-0.5 text-xs font-medium text-emerald-700">High Match</p>
-          </div>
-
-          <div className="rounded-lg border border-amber-200 bg-white p-3 shadow-sm">
-            <div className="flex items-center justify-between">
-              <p className="font-mono text-2xl font-semibold text-amber-500">
-                {mediumCount}
-              </p>
-              <span className="text-[10px] font-mono uppercase tracking-wider text-amber-600">Sedang</span>
-            </div>
-            <p className="mt-0.5 text-xs font-medium text-amber-700">Medium Match</p>
-          </div>
-        </div>
-      )}
 
       {/* Loading */}
       {loading ? (
@@ -214,13 +122,13 @@ export default function RekomendasiPage() {
         /* Empty state */
         <div className="flex flex-col items-center justify-center py-16 rounded-lg border border-slate-200 bg-white">
           <span className="text-3xl text-slate-500">★</span>
-          <p className="mt-4 text-sm text-slate-500">Belum ada rekomendasi</p>
-          <p className="mt-1 text-xs text-slate-400">Lengkapi profil kamu untuk mendapatkan rekomendasi lowongan</p>
+          <p className="mt-4 text-sm text-slate-500">Belum ada lowongan yang cukup relevan</p>
+          <p className="mt-1 text-xs text-slate-400">Lengkapi atribut di profil untuk meningkatkan kecocokan.</p>
           {errorMsg && (
             <p className="mt-2 text-xs text-red-500 font-mono">Error: {errorMsg}</p>
           )}
           <a
-            href="/dashboard/profile"
+            href="/user/profile"
             className="mt-4 rounded-md border border-slate-200 bg-white px-4 py-2 text-xs font-medium text-slate-600 hover:border-slate-400 hover:text-slate-900 transition-all"
           >
             Lengkapi Profil
@@ -235,7 +143,8 @@ export default function RekomendasiPage() {
       ) : (
         /* Results grid */
         <div className="grid grid-cols-1 gap-4 md:grid-cols-2 animate-fade-in-up" style={{ animationDelay: '0.1s' }}>
-          {sorted.map((result, index) => {
+          {results.map((result, index) => {
+            const percent = Math.round(result.score * 100)
             return (
               <div
                 key={result.job.id}
@@ -271,47 +180,23 @@ export default function RekomendasiPage() {
                     <ScoreBar score={result.score} />
                   </div>
 
-                  {/* Skills */}
-                  {result.job.skills && result.job.skills.length > 0 && (
-                    <div className="mt-3">
-                      <div className="flex flex-wrap gap-1.5">
-                        {result.job.skills.map((skill) => {
-                          const matched = isSkillMatched(skill, userSkills)
-                          return (
-                            <span
-                              key={skill}
-                              className={`inline-flex items-center gap-1 rounded-md border px-2 py-0.5 text-[10px] font-medium font-mono ${
-                                matched
-                                  ? 'border-emerald-200 bg-emerald-50 text-emerald-700'
-                                  : 'border-slate-200/60 bg-slate-50/60 text-slate-600'
-                              }`}
-                            >
-                              {matched && (
-                                <svg className="h-3 w-3" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2.5}>
-                                  <path strokeLinecap="round" strokeLinejoin="round" d="M4.5 12.75l6 6 9-13.5" />
-                                </svg>
-                              )}
-                              {skill}
-                            </span>
-                          )
-                        })}
-                      </div>
-                      <p className="mt-1.5 text-[10px] font-mono text-slate-400">
-                        <span className="text-emerald-600">●</span> skill kamu · <span className="text-slate-400">○</span> belum dimiliki
-                      </p>
-                      <SkillSuggestions
-                        description={result.job.description}
-                        jobSkills={result.job.skills}
-                        userSkills={userSkills}
-                      />
-                    </div>
+                  {/* Deskripsi lowongan */}
+                  {result.job.description && (
+                    <p className="text-xs text-slate-600 line-clamp-2 leading-relaxed mt-2.5">
+                      {result.job.description}
+                    </p>
                   )}
 
                   {/* Toggle detail */}
                   <div className="flex items-center justify-between mt-3 pt-3 border-t border-slate-100">
-                    <span className="text-[10px] font-mono text-slate-400">
-                      Skor Cosine Similarity
-                    </span>
+                    <div className="flex flex-col gap-0.5">
+                      <span className="text-[10px] font-mono text-slate-700">
+                        Tingkat kecocokan <span className="text-amikom-purple font-semibold">{percent}%</span>
+                      </span>
+                      <span className="text-[10px] font-mono text-slate-400">
+                        Diposting {new Date(result.job.created_at).toLocaleDateString('id-ID', { day: 'numeric', month: 'short', year: 'numeric' })}
+                      </span>
+                    </div>
                     <button
                       type="button"
                       onClick={() => setSelectedJob(result)}
@@ -375,46 +260,7 @@ export default function RekomendasiPage() {
               </span>
             </div>
 
-            {/* Skills */}
-            {selectedJob.job.skills && selectedJob.job.skills.length > 0 && (
-              <div>
-                <p className="text-[10px] font-mono uppercase tracking-wider text-slate-500 mb-1.5">
-                  Skill
-                </p>
-                <div className="flex flex-wrap gap-1.5">
-                  {selectedJob.job.skills.map((skill) => {
-                    const matched = isSkillMatched(skill, userSkills)
-                    return (
-                      <span
-                        key={skill}
-                        className={`inline-flex items-center gap-1 rounded-md px-2 py-0.5 text-[10px] font-medium font-mono border ${
-                          matched
-                            ? 'border-emerald-200 bg-emerald-50 text-emerald-700'
-                            : 'border-slate-200/60 bg-slate-50/60 text-slate-600'
-                        }`}
-                      >
-                        {matched && (
-                          <svg className="h-3 w-3" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2.5}>
-                            <path strokeLinecap="round" strokeLinejoin="round" d="M4.5 12.75l6 6 9-13.5" />
-                          </svg>
-                        )}
-                        {skill}
-                      </span>
-                    )
-                  })}
-                </div>
-                <p className="mt-1.5 text-[10px] font-mono text-slate-400">
-                  <span className="text-emerald-600">●</span> skill kamu · <span className="text-slate-400">○</span> belum dimiliki
-                </p>
-                <SkillSuggestions
-                  description={selectedJob.job.description}
-                  jobSkills={selectedJob.job.skills}
-                  userSkills={userSkills}
-                />
-              </div>
-            )}
-
-            {/* Description */}
+            {/* Deskripsi Lowongan */}
             {selectedJob.job.description && (
               <div>
                 <p className="text-[10px] font-mono uppercase tracking-wider text-slate-500 mb-1">
@@ -423,15 +269,6 @@ export default function RekomendasiPage() {
                 <p className="text-sm text-slate-600 leading-relaxed">{selectedJob.job.description}</p>
               </div>
             )}
-
-            <div>
-              <p className="text-[10px] font-mono uppercase tracking-wider text-slate-500 mb-1.5">
-                Skor Cosine Similarity
-              </p>
-              <p className="text-sm text-slate-600 leading-relaxed">
-                Skor ini dihitung dari kemiripan konten profil dan pengalaman kerja kamu dengan dokumen lowongan menggunakan TF-IDF dan Cosine Similarity. Nilai 100% berarti vektor teks paling mirip dengan lowongan pada hasil saat ini.
-              </p>
-            </div>
 
             {/* Contact */}
             {selectedJob.job.contact_info && (

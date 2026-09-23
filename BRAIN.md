@@ -63,6 +63,7 @@
 12. **Kriteria rekomendasi:** program_studi, skills, track_records.position + track_records.description, certifications, job_interests, preferred_location, dan preferred_type.
 13. **Lokasi profil:** `location` tetap domisili; `preferred_location` adalah preferensi kerja. `education_level` dipertahankan untuk legacy/Tracer Study, sedangkan `program_studi` menjadi kriteria rekomendasi.
 14. **Netlify Build & Deploy Safety:** Setiap agent WAJIB menjalankan pre-flight verification (`npx tsc --noEmit`, `npx next lint`, `npm run build`) sebelum menyelesaikan task. Jangan commit file `.env` / API secrets, jangan tinggalkan temporary scripts di root, dan pastikan seluruh public domain/images terdaftar di config.
+15. **Role matrix dikunci untuk super_user:** `/admin/roles` tidak mengizinkan edit permission `super_user` (server `updateRolePermissions` juga menolak) — cegah admin mengunci dirinya sendiri. Role lain (user/custom) bebas di-toggle.
 
 ---
 
@@ -133,6 +134,35 @@ isQuestionVisible(q, questions, answers) // status (order 100) + sub-branch "Ya/
 - Tipe jawaban baru: `checkbox` (multi-pilih, disimpan comma-separated) & `scale` (skala 1–5 simpan label penuh, mis. `4 = Baik`).
 - Validasi wajib di `handleSubmit`: hanya pertanyaan yang terlihat + required yang dicek.
 - ⚠️ Tipe `scale` harus sinkron dengan CHECK constraint DB `tracer_study_questions_question_type_check` (migration 015). Jika template insert gagal, cek constraint ini dulu.
+
+### Server Action Permission Guard (Spatie-style hybrid, phase 1)
+```ts
+import { requirePermission } from '@/lib/permissions/guards'
+import { PERMISSIONS } from '@/lib/permissions'
+
+export async function someAdminAction() {
+  const { supabase, user } = await requirePermission(PERMISSIONS.ALUMNI_MANAGE)
+  // ...
+}
+```
+- Definisi permission di kode: `lib/permissions/index.ts` (type-safe, `PERMISSIONS` const).
+- Mapping role→permission di DB: tabel `permissions` + `role_permissions` (migration 017), di-cache 5 menit tag `'permissions'` via `can()` di `lib/permissions/can.ts`; fallback statis `ROLE_PERMISSIONS` jika tabel belum ada (deploy aman sebelum migration di-apply).
+- `requirePermission`: tanpa session → `redirect('/login')`; tanpa permission → `throw Error('Forbidden')`. Ganti inline `role !== 'super_user'` dan duplikasi `checkAdminRole()`.
+- `withAuth()` tetap untuk action milik user sendiri (profile, track-record, tracer-study) — cukup cek login.
+
+### Dynamic Roles (phase 3, migration 019)
+```ts
+// Tabel roles generik (name, description, is_locked) — profiles.role & role_permissions.role = text FK → roles(name)
+await createRole('humas_staff', 'Pengelola konten')   // guard role.manage, tanpa permission sampai di-centang
+await setUserRole(userId, 'humas_staff')              // tolak ubah role sendiri; jaga ≥1 super_user
+await deleteRole('humas_staff')                       // tolak LOCKED_ROLES (super_user/user) & role yang masih dipakai
+```
+- `RoleGuard` mendukung `allowedRoles` (role-based) DAN/OR `requiredActions` (permission-based via `can()`); tanpa kriteria = cukup punya profile.
+- `/admin/layout` = `requiredActions={ADMIN_ACTIONS}`; `/super-user` tetap `allowedRoles=['super_user']`; middleware `/admin` cukup auth (gate pindah ke RoleGuard).
+- `addUser(..., role)`: role selain `user` wajib `role.manage` (anti privilege-escalation). Dropdown add-user = hardcoded `super_user`/`user` + role custom dari tabel.
+- RLS profiles select/update/delete-all kini berbasis `has_permission('alumni.manage')`; WITH CHECK update: role≠`user` wajib `role.manage`.
+- Label tampilan: `roleLabel()` di `lib/permissions` (super_user→Super User, user→User, custom→nama asli).
+- Menambah role baru di produksi: buat via `/admin/roles` → centang permission → tugaskan via `/admin/alumni` (Ubah Role) atau dropdown add-user. Tidak perlu ubah kode/konstanta.
 
 ### Seamless Infinite Marquee (Wisuda Gallery)
 ```tsx
@@ -306,6 +336,11 @@ isQuestionVisible(q, questions, answers) // status (order 100) + sub-branch "Ya/
 | Fix crash `PRODI_FALLBACK` — `PRODI_CONFIG['S1']` (key tidak ada → undefined) → `PRODI_CONFIG['S1 Informatika']` | `components/cv/cv-template.tsx` | ✅ |
 | Selaraskan seluruh suite Jest ke hijau — 11 suite pre-existing gagal → 0: e2e di-`testPathIgnorePatterns`, key mock `tracerStudy`→`SistemAlumni`, label ekspektasi sinkron template (STMIK, Pengalaman Organisasi dan Proyek, plain-text skills, title `CV -`, header style, EN labels), bulk-import role-lock assertions, education_level enum | `jest.config.ts`, `__tests__/cv-generation.test.tsx`, `__tests__/cv-generation-api.test.tsx`, `__tests__/cv-generation.test.ts` (dihapus), `__tests__/bulk-import-*.ts(x)`, `__tests__/landing.test.tsx`, `__tests__/matching.test.ts`, `__tests__/tracer-study-analytics.test.ts` | ✅ |
 | Pre-flight akhir — `npx jest` 344/344, `npx tsc --noEmit` 0, `npx next lint` clean, `npm run build` 39/39 | — | ✅ |
+| Commit + push ke `origin/dimah` — `d1233e6` feat(rbac) 32 file + `401bac5` fix(ui) sync 10 file; baseline Netlify LIVE. **Fix merge `main`→`dimah` (`2983a14`, PR #3)** yang merusak JSX (`profile`/`rekomendasi` syntax error → Netlify Deploy Preview failed) — restore 4 file ke versi `401bac5` + BRAIN progress rows | git, PR #3 | ✅ |
+| Permission management phase 1 (Spatie-style hybrid) — migration 017 (`permissions` + `role_permissions` + `has_permission()` + seed), core `lib/permissions/` (`PERMISSIONS`, `can()` cached, `requirePermission`), tutup celah keamanan (bulk-import & reset/delete user & 3 export & questions CRUD kini pakai guard; `checkAdminRole` duplikat di jobs/content konsolidasi), types DB + seed sinkron; migration 015+017 **sudah di-apply & diverifikasi live** (10 permissions, 14 mapping, role utuh), 016 jadi guarded no-op; verifikasi tsc 0 / lint clean / jest 344 / build 39/39 | `supabase/migrations/017_permissions_rbac.sql`, `lib/permissions/{index,can,guards}.ts`, `lib/actions/{bulk-import,alumni,export,questions,jobs,content,survey-perusahaan}.ts`, `types/database.ts`, `__tests__/bulk-import-{logic,batch5,bug-server}.test.ts` | ✅ |
+| Permission management phase 2 (UI admin) — halaman `/admin/roles` matrix role×permission (super_user dikunci, role lain toggle + toast save + `revalidateTag('permissions')`), server actions `getPermissionMatrix`/`updateRolePermissions`/`getMyPermissions` (guard `role.manage`), permission `role.manage` (migration 018 + seed live via REST, 11 permission total), sidebar: link "Role & Akses" + item nav bertag `action` + `filterNavByActions` (fail-open) + fetch `getMyPermissions` hanya untuk role di luar super_user/user, breadcrumb label `roles`; pre-flight tsc 0 / lint clean / jest 344 / **build 40/40**; file `nul` (scratch dari redirect `2>nul`) & `supabase/.temp` dibersihkan | `app/(protected)/admin/roles/page.tsx`, `lib/actions/permissions.ts`, `lib/permissions/index.ts`, `components/dashboard-sidebar.tsx`, `app/(protected)/layout.tsx`, `lib/breadcrumbs.ts`, `supabase/migrations/018_add_role_manage_permission.sql` | ✅ |
+| Permission management phase 3 (dynamic roles, opsi B) — migration `019_dynamic_roles.sql` (tabel `roles` + seed 2 role locked, enum `app_role` → `text` + FK, RLS profiles → `has_permission('alumni.manage')` + WITH CHECK anti-escalation, recreate `get_my_role`/`has_permission`); server actions `createRole`/`deleteRole`/`setUserRole`/`getRoleOptions`; `RoleGuard` + `requiredActions` (admin layout = `ADMIN_ACTIONS`, user layout = any profile, middleware `/admin` cukup auth, `/super-user` tetap super_user); UI: Tambah/Hapus Role di `/admin/roles`, Ubah Role di `/admin/alumni`, dropdown role di add-user (hardcoded super_user+user + dynamic, kini **terkirim ke `addUser`** — sebelumnya state role form tidak pernah dipakai = bug), badge/label via `roleLabel`; types `AppRole` → `string` + `RoleRow`; pre-flight tsc 0 / lint clean / jest 344 / build 40/40. **Migration 019 sudah di-apply & diverifikasi live 2026-09-23** (roles 2 locked, 8 profil utuh — trigger register jalan di kolom text, 15 mapping, 11 permission, enum `app_role` hilang, 5 policy profiles; insiden awal error 0A000 karena WITH CHECK policy `user: update own profile` menolak ALTER TYPE → fix: drop policy di awal + recreate identik di akhir; run pertama gagal menyisakan state partial `roles` terisi, re-run idempoten beres) | `supabase/migrations/019_dynamic_roles.sql`, `lib/actions/{permissions,alumni}.ts`, `lib/permissions/index.ts`, `components/auth/role-guard.tsx`, `components/admin/add-user-form.tsx`, `app/(protected)/admin/{layout,roles/page,alumni/page}.tsx`, `app/(protected)/user/layout.tsx`, `middleware.ts`, `types/database.ts` | ✅ |
+| Sinkronisasi UI ke GitHub `cnqqi/skripsi-gue` (laporan QA — 5 area tidak sesuai referensi) — checkout versi GitHub: dashboard `/admin` (progress per-angkatan + `force-dynamic`, MiniStat/Alumni Terbaru lokal dibuang), `/admin/bulk-import` (info box "Ketentuan" lokal dihapus — isinya outdated), template CSV `download-template-button` (kolom Role kembali) + restore `contoh-import-user.csv`, `/dashboard/profile` (Card 1–6 + **kunci CV: wajib isi Tracer Study** via `hasCompletedTracerStudy`), `/user/rekomendasi` (tanpa sort/stats/chips — `scoreColor` kembali); **keep security**: server `bulk-import` tetap `role='user'` + password min 8 (patch preview client 6→8, Role tampil tapi tetap dipaksa user server-side — test Role column di-invert), `getAlumniStats` lokal dibackup `byAngkatan` (wajib page GitHub), `updateProfile` guard `formData.has()` untuk `education_level`/`expected_salary` (page GitHub tidak kirim → cegah null-wipe), `graduation_year`/`tanggal_lahir` tetap admin-only; pre-flight tsc 0 / lint clean / jest 344 / **build 40/40** | `app/(protected)/admin/page.tsx`, `app/(protected)/admin/bulk-import/page.tsx`, `app/(protected)/dashboard/profile/page.tsx`, `app/(protected)/user/rekomendasi/page.tsx`, `components/download-template-button.tsx`, `components/super-user/bulk-import-form.tsx`, `contoh-import-user.csv`, `lib/actions/{profile,alumni}.ts`, `__tests__/bulk-import-ui.test.tsx` | ✅ |
 
 
 ### Fitur Baru — Juli & Agustus 2026
@@ -332,8 +367,9 @@ isQuestionVisible(q, questions, answers) // status (order 100) + sub-branch "Ya/
 
 | Prioritas | Item | Lokasi |
 |---|---|---|
-| 🔴 | **Apply migration 016 ke Supabase** (`016_fix_study_field_match_type.sql`) — fix type `study_field_match`; file sudah ada, apply manual via SQL Editor | `supabase/migrations/016_fix_study_field_match_type.sql` |
-| 🔴 | **Apply migration 015 ke Supabase** (jalankan `supabase/.../015_add_scale_question_type.sql` di SQL Editor / `supabase db push`) — baru setelah ini reload template bisa berhasil; langsung dari sini buka `/admin/kuesioner` → Tambah Tahun Lulusan → centang template untuk overwrite angkatan | Supabase Dashboard → SQL Editor |
+| 🔴 | ~~Apply migration 017~~ ✅ **Sudah di-apply & diverifikasi 2026-09-23** (10 permissions, 14 role_permissions, role profiles utuh) | Supabase (via SQL) |
+| ~~🔴~~ | ~~Apply migration 016~~ — kolom live **sudah `text`**, run pertama gagal `text = boolean`; file diganti guarded DO-block (no-op jika sudah text) — tidak perlu di-apply | `supabase/migrations/016_fix_study_field_match_type.sql` |
+| ~~🔴~~ | ~~Apply migration 015~~ ✅ **Sudah di-apply 2026-09-23** (constraint `scale` OK) | Supabase (via SQL) |
 | 🟡 | Verifikasi checkbox & scale di form alumni setelah reload template — isi `/dashboard/tracer-study`, cek percabangan status & validasi wajib | `app/(protected)/dashboard/tracer-study/page.tsx` |
 | 🔴 | Setup Supabase Storage bucket `content` (public) — wajib sebelum upload gambar bisa berfungsi | Supabase Dashboard → Storage → New bucket |
 | 🔴 | Jalankan migration 010 di Supabase SQL Editor (`010_add_graduation_year.sql`) | `supabase/migrations/010_add_graduation_year.sql` |
@@ -348,6 +384,10 @@ isQuestionVisible(q, questions, answers) // status (order 100) + sub-branch "Ya/
 | 🟡 | Bikin input bullet points terpisah di form track record (bukan 1 textarea) | `app/(protected)/dashboard/track-record/page.tsx` |
 | 🟡 | Poles CV template EN — pastikan paragraf fokus studi sesuai bahasa | `components/cv/cv-template.tsx` |
 | 🟢 | Tambah `not-found.tsx` di root app — custom 404 halaman | `app/not-found.tsx` |
+| ~~🔴~~ | ~~Apply migration 019~~ ✅ **Sudah di-apply & diverifikasi 2026-09-23** (roles 2, 8 profil utuh, 15 mapping, enum hilang, 5 policy) — fix error 0A000: drop+recreate policy `user: update own profile` | `supabase/migrations/019_dynamic_roles.sql` |
+| 🟡 | Smoke test UI phase 3 **setelah Deploy Preview PR #3 hijau**: login 3 super_user, alumni tetap `/dashboard`, buat role `humas_staff` → assign user → sidebar terfilter & aksi lain ditolak; cek Ubah Role & dropdown add-user; verifikasi 5 area QA | — |
+| 🔴 | Rotate password `superadmin@amikomsolo.ac.id` (+ akun demo) — masih `password` | Supabase / aplikasi |
+| 🟡 | Fix CI trigger: `.github/workflows/ci.yml` branch `master` → `main`/`dimah` agar pre-flight jalan otomatis | `.github/workflows/ci.yml` |
 
 ### Fixed Bugs
 - **CV Preview dialog kosong:** Data fetching ditaruh di `onOpenChange` handler, tapi Radix UI Dialog cuma manggil `onOpenChange` saat user menutup dialog, bukan saat parent set `open={true}`. Dipindah ke `useEffect` — `components/cv/cv-preview-dialog.tsx:150-172`

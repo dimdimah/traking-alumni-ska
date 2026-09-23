@@ -82,7 +82,7 @@ export default async function DashboardPage() {
                   <span className={`inline-block h-1.5 w-1.5 rounded-full ${
                     profile?.role === 'super_user' ? 'bg-amikom-jonquil-warm' : 'bg-amikom-purple'
                   }`} />
-                  {profile?.role === 'super_user' ? 'Super User' : 'User'}
+                  {profile?.role === 'super_user' ? 'Super User' : profile?.role === 'user' ? 'User' : (profile?.role ?? '—')}
                 </span>
               </div>
             </div>

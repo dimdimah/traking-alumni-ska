@@ -1,11 +1,9 @@
 // FILE: types/database.ts
 
-export type AppRole = 'super_user' | 'user'
-
 export type Profile = {
   id: string
   email: string
-  role: AppRole
+  role: string
   full_name: string | null
   nim: string | null
   tanggal_lahir: string | null
@@ -335,12 +333,28 @@ export type Database = {
         Update: Partial<Omit<AdminActivityLog, 'id' | 'created_at'>>
         Relationships: []
       }
+      permissions: {
+        Row: PermissionRow
+        Insert: Omit<PermissionRow, 'id'>
+        Update: Partial<PermissionRow>
+        Relationships: []
+      }
+      role_permissions: {
+        Row: RolePermission
+        Insert: RolePermission
+        Update: RolePermission
+        Relationships: []
+      }
+      roles: {
+        Row: RoleRow
+        Insert: Omit<RoleRow, 'created_at'>
+        Update: Partial<Omit<RoleRow, 'name'>>
+        Relationships: []
+      }
     }
     Views: Record<string, never>
     Functions: Record<string, never>
-    Enums: {
-      app_role: AppRole
-    }
+    Enums: Record<string, never>
   }
 }
 
@@ -380,6 +394,26 @@ export type AdminActivityLog = {
   title: string
   description: string | null
   metadata: Record<string, any> | null
+  created_at: string
+}
+
+// ─── Permissions (migration 017 — Spatie-style hybrid) ───
+export type PermissionRow = {
+  id: string
+  action: string
+  description: string | null
+}
+
+export type RolePermission = {
+  role: string
+  permission_id: string
+}
+
+// ─── Roles (migration 019 — dynamic roles) ───
+export type RoleRow = {
+  name: string
+  description: string | null
+  is_locked: boolean
   created_at: string
 }
 

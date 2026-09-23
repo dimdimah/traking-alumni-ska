@@ -4,6 +4,8 @@ import { revalidatePath } from 'next/cache'
 import { z } from 'zod'
 import { createAdminClient } from '@/lib/supabase/admin'
 import { parseCSVLine } from '@/lib/csv-utils'
+import { requirePermission } from '@/lib/permissions/guards'
+import { PERMISSIONS } from '@/lib/permissions'
 
 const rowSchema = z.object({
   email: z.string().email('Email tidak valid').refine(
@@ -28,6 +30,8 @@ export interface BulkImportResult {
 }
 
 export async function bulkImportUsers(raw: string): Promise<BulkImportResult> {
+  await requirePermission(PERMISSIONS.ALUMNI_MANAGE)
+
   const lines = raw
     .replace(/\r\n/g, '\n')
     .replace(/\r/g, '')

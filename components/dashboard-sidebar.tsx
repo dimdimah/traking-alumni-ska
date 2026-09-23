@@ -7,11 +7,12 @@ import { usePathname, useRouter } from 'next/navigation'
 import { motion, AnimatePresence } from 'motion/react'
 import { logout } from '@/lib/auth-actions'
 import { isActiveLink } from '@/lib/utils'
+import { ADMIN_ACTIONS } from '@/lib/permissions'
 import type { Profile } from '@/types/database'
 import {
   Home, ClipboardList, Search, User,
   Users, LogOut, ChevronLeft, X, ChevronRight, Network, FileText, ChevronDown,
-  Briefcase, Newspaper, Award, HelpCircle
+  Briefcase, Newspaper, Award, HelpCircle, ShieldCheck
 } from 'lucide-react'
 import {
   DropdownMenu,
@@ -27,6 +28,8 @@ interface SidebarProps {
   onToggle: () => void
   mobileOpen: boolean
   onMobileClose: () => void
+  /** Permission role user (dari getMyPermissions). null = tanpa filter (fail-open). */
+  allowedActions?: string[] | null
 }
 
 const sidebarWidth = 240
@@ -35,7 +38,16 @@ const sidebarCollapsedWidth = 64
 const iconClass = 'h-[18px] w-[18px] shrink-0'
 const childIconClass = 'h-[16px] w-[16px] shrink-0'
 
-const userNav = [
+type NavChild = { href: string; label: string; icon?: ReactNode; action?: string }
+type NavItem = {
+  href?: string
+  label: string
+  icon: ReactNode
+  action?: string
+  children?: NavChild[]
+}
+
+const userNav: NavItem[] = [
   { href: '/dashboard', label: 'Dashboard', icon: <Home className={iconClass} /> },
   { href: '/dashboard/tracer-study', label: 'Tracer Study', icon: <ClipboardList className={iconClass} /> },
   { href: '/dashboard/career', label: 'Lowongan Kerja', icon: <Search className={iconClass} /> },
@@ -43,28 +55,69 @@ const userNav = [
   { href: '/dashboard/profile', label: 'Profil', icon: <User className={iconClass} /> },
 ]
 
-const adminNav = [
+const adminNav: NavItem[] = [
   { href: '/admin', label: 'Dashboard', icon: <Home className={iconClass} /> },
-  { href: '/admin/alumni', label: 'Manajemen Alumni', icon: <Users className={iconClass} /> },
-  { href: '/admin/kuesioner', label: 'Tracer Study', icon: <ClipboardList className={iconClass} /> },
-  // { href: '/admin/survey-perusahaan', label: 'Survey Perusahaan', icon: <Building2 className={iconClass} /> },
+  { href: '/admin/alumni', label: 'Manajemen Alumni', icon: <Users className={iconClass} />, action: 'alumni.manage' },
+  { href: '/admin/kuesioner', label: 'Tracer Study', icon: <ClipboardList className={iconClass} />, action: 'question.manage' },
+  // { href: '/admin/survey-perusahaan', label: 'Survey Perusahaan', icon: <Building2 className={iconClass} />, action: 'survey.view' },
+  { href: '/admin/roles', label: 'Role & Akses', icon: <ShieldCheck className={iconClass} />, action: 'role.manage' },
   {
     href: '/admin/content',
     label: 'Manajemen Konten',
     icon: <FileText className={iconClass} />,
+    action: 'content.manage',
     children: [
-      { href: '/admin/career-center', label: 'Lowongan Kerja', icon: <Briefcase className={childIconClass} /> },
-      { href: '/admin/content/berita', label: 'Berita', icon: <Newspaper className={childIconClass} /> },
-      { href: '/admin/content/sertifikasi', label: 'Sertifikasi', icon: <Award className={childIconClass} /> },
-      { href: '/admin/content/faq', label: 'FAQ', icon: <HelpCircle className={childIconClass} /> },
+      { href: '/admin/career-center', label: 'Lowongan Kerja', icon: <Briefcase className={childIconClass} />, action: 'job.manage' },
+      { href: '/admin/content/berita', label: 'Berita', icon: <Newspaper className={childIconClass} />, action: 'content.manage' },
+      { href: '/admin/content/sertifikasi', label: 'Sertifikasi', icon: <Award className={childIconClass} />, action: 'content.manage' },
+      { href: '/admin/content/faq', label: 'FAQ', icon: <HelpCircle className={childIconClass} />, action: 'content.manage' },
     ]
   },
 ]
 
-export default function DashboardSidebar({ profile, collapsed, onToggle, mobileOpen, onMobileClose }: SidebarProps) {
+function filterNavChildren(items: NavChild[], allowed: string[]): NavChild[] {
+  return items.filter((item) => !item.action || allowed.includes(item.action))
+}
+
+function filterNavByActions(
+  items: NavItem[],
+  allowed: string[] | null | undefined
+): NavItem[] {
+  // Fail-open: null/undefined (belum terload / error) → tampilkan semua
+  if (!allowed) return items
+
+  const out: NavItem[] = []
+  for (const item of items) {
+    const itemAllowed = !item.action || allowed.includes(item.action)
+    if (item.children) {
+      const children = filterNavChildren(item.children, allowed)
+      if (children.length > 0) {
+        out.push({ ...item, children })
+      } else if (itemAllowed) {
+        out.push(item)
+      }
+      // children habis & parent tak punya akses → sembunyikan parent
+    } else if (itemAllowed) {
+      out.push(item)
+    }
+  }
+  return out
+}
+
+const ADMIN_NAV_ACTIONS: readonly string[] = ADMIN_ACTIONS
+
+export default function DashboardSidebar({ profile, collapsed, onToggle, mobileOpen, onMobileClose, allowedActions }: SidebarProps) {
   const pathname = usePathname()
   const isSuperUser = profile?.role === 'super_user'
-  const navItems = isSuperUser ? adminNav : userNav
+  // Nav admin tampil untuk super_user, atau role lain yang punya minimal 1 permission admin.
+  // Role 'user' murni (hanya permission milik sendiri) → userNav seperti biasa.
+  const hasAdminAccess =
+    isSuperUser ||
+    (allowedActions !== null && allowedActions !== undefined &&
+      allowedActions.some((a) => ADMIN_NAV_ACTIONS.includes(a)))
+  const navItems = hasAdminAccess
+    ? filterNavByActions(adminNav, allowedActions)
+    : userNav
 
   return (
     <>
@@ -127,7 +180,7 @@ export default function DashboardSidebar({ profile, collapsed, onToggle, mobileO
 function SidebarContent({
   navItems, pathname, profile, collapsed, onToggle, onClose,
 }: {
-  navItems: { href?: string; label: string; icon: ReactNode; children?: { href: string; label: string }[] }[]
+  navItems: NavItem[]
   pathname: string
   profile: Profile | null
   collapsed: boolean
@@ -172,7 +225,7 @@ function SidebarContent({
             return (
               <CollapsibleNavItem
                 key={item.label}
-                item={item as { label: string; icon: ReactNode; children: { href: string; label: string }[] }}
+                item={item as NavItem & { children: NavChild[] }}
                 pathname={pathname}
                 collapsed={collapsed}
                 onClose={onClose}
@@ -262,7 +315,7 @@ function SidebarContent({
 function CollapsibleNavItem({
   item, pathname, collapsed, onClose
 }: {
-  item: { href?: string; label: string; icon: ReactNode; children: { href: string; label: string; icon?: ReactNode }[] }
+  item: NavItem & { children: NavChild[] }
   pathname: string
   collapsed: boolean
   onClose: () => void

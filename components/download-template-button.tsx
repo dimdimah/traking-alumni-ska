@@ -4,20 +4,16 @@ const HEADERS = [
   'Nama',
   'Email',
   'Password',
-  'Skills',
-  'Location',
-  'Education Level',
-  'Expected Salary',
-  'Preferred Type',
+  'Role',
   'Tahun Lulus',
 ]
 
 const SAMPLE_DATA = [
-  ['Budi Santoso', 'budi@amikomsolo.ac.id', 'Rahasia123', 'JavaScript; React; Node.js', 'STMIK AMIKOM Surakarta', 'S1', '5-8 juta', 'Full-time', '2024'],
-  ['Siti Aminah', 'siti@amikomsolo.ac.id', 'Amikom456', 'Python; Machine Learning', 'Jakarta', 'S2', '8-12 juta', 'Full-time', '2023'],
-  ['Ahmad Fauzi', 'ahmad@amikomsolo.ac.id', 'Fauzi789', 'Java; Spring Boot', 'Surakarta', 'S1', '4-7 juta', 'Contract', '2024'],
-  ['Dewi Lestari', 'dewi@amikomsolo.ac.id', 'Lestari321', 'Figma; Adobe XD; CSS', 'Remote', 'S1', '5-8 juta', 'Part-time', '2023'],
-  ['Rudi Hartono', 'rudi@amikomsolo.ac.id', 'Hartono654', 'SQL; PostgreSQL; Excel', 'STMIK AMIKOM Surakarta', 'D3', '3-5 juta', 'Internship', '2025'],
+  ['Budi Santoso', 'budi@amikomsolo.ac.id', 'rahasia123', 'user', '2023'],
+  ['Siti Aminah', 'siti@amikomsolo.ac.id', 'amikom456', 'user', '2022'],
+  ['Ahmad Fauzi', 'ahmad@amikomsolo.ac.id', 'fauzi789', 'super_user', '2021'],
+  ['Dewi Lestari', 'dewi@amikomsolo.ac.id', 'lestari321', 'user', '2024'],
+  ['Rudi Hartono', 'rudi@amikomsolo.ac.id', 'hartono654', 'user', ''],
 ]
 
 export async function generateExcelBlob(): Promise<Blob> {
@@ -60,8 +56,7 @@ export async function generateExcelBlob(): Promise<Blob> {
   }
 
   ws['!cols'] = [
-    { wch: 20 }, { wch: 35 }, { wch: 20 }, { wch: 40 },
-    { wch: 20 }, { wch: 15 }, { wch: 20 }, { wch: 20 }, { wch: 15 }
+    { wch: 20 }, { wch: 35 }, { wch: 20 }, { wch: 12 }, { wch: 14 },
   ]
   ws['!freeze'] = { xSplit: 0, ySplit: 1, topLeftCell: 'A2' }
 
@@ -96,6 +91,7 @@ export async function exportPreviewToExcel(data: Array<{
   email: string
   name: string
   password: string
+  role: string
   skills: string
   location: string
   valid: boolean
@@ -103,9 +99,9 @@ export async function exportPreviewToExcel(data: Array<{
   const XLSX = await import('xlsx-js-style')
 
   const wsData = [
-    ['Nama', 'Email', 'Password', 'Skills', 'Location', 'Status'],
+    ['Nama', 'Email', 'Password', 'Role', 'Status'],
     ...data.map(d => [
-      d.name, d.email, d.password, d.skills, d.location,
+      d.name, d.email, d.password, d.role,
       d.valid ? 'Valid' : 'Invalid'
     ])
   ]
@@ -148,7 +144,7 @@ export async function exportPreviewToExcel(data: Array<{
   }
 
   ws['!cols'] = [
-    { wch: 20 }, { wch: 35 }, { wch: 20 }, { wch: 40 }, { wch: 20 }, { wch: 10 }
+    { wch: 20 }, { wch: 35 }, { wch: 20 }, { wch: 12 }, { wch: 10 }
   ]
   ws['!freeze'] = { xSplit: 0, ySplit: 1, topLeftCell: 'A2' }
 
@@ -202,7 +198,7 @@ export default function DownloadTemplateButton() {
           </div>
           <div>
             <p className="text-sm font-semibold text-slate-900">Download Template Excel</p>
-            <p className="text-xs text-slate-600 mt-0.5">Gunakan template ini sebagai panduan format import data alumni</p>
+            <p className="text-xs text-slate-600 mt-0.5">Kolom wajib: Nama, Email, Password. Kolom opsional: Role, Tahun Lulus</p>
           </div>
         </div>
         <button

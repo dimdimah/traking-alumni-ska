@@ -121,7 +121,7 @@ export default function BulkImportForm() {
       const email = cols[headers.findIndex(h => h === 'email')] || ''
       const name = cols[headers.findIndex(h => h === 'nama' || h === 'name' || h === 'display_name')] || ''
       const password = cols[headers.findIndex(h => h === 'password' || h === 'pass')] || ''
-      const role = cols[headers.findIndex(h => h === 'role' || h === 'roles')] || 'user'
+      const role = cols[headers.findIndex(h => h === 'role' || h === 'roles')]?.trim() || 'user'
       const skills = cols[headers.findIndex(h => h === 'skills' || h === 'skill')] || ''
       const location = cols[headers.findIndex(h => h === 'location' || h === 'lokasi')] || ''
       const graduationYear = cols[headers.findIndex(h => h === 'tahun lulus' || h === 'graduation_year' || h === 'angkatan')] || ''
@@ -129,18 +129,15 @@ export default function BulkImportForm() {
       // Validasi preview selaras dengan Zod server:
       // - email harus @amikomsolo.ac.id
       // - nama tidak boleh kosong
-      // - password minimal 8 karakter (uppercase, lowercase, digit)
-      // - role di-hardcode 'user' (tidak diproses dari CSV untuk keamanan)
+      // - password minimal 8 karakter (Zod server: bulk-import)
+      // - role hanya user / super_user (kosong = user)
       const valid =
         name.length > 0 &&
         email.endsWith('@amikomsolo.ac.id') &&
         password.length >= 8 &&
-        /[A-Z]/.test(password) &&
-        /[a-z]/.test(password) &&
-        /[0-9]/.test(password)
+        (role === 'user' || role === 'super_user')
 
       return { row: i + 2, email, name, password, role, skills, location, graduationYear, valid }
-      // role diabaikan, akan di-set 'user' oleh server
     })
   }, [raw])
 
@@ -249,39 +246,43 @@ export default function BulkImportForm() {
             </p>
           </div>
           <div className="overflow-x-auto max-h-48 overflow-y-auto">
-            <table className="w-full text-sm">
-              <thead className="bg-slate-50 text-left">
-                <tr>
-                  <th className="px-4 py-2 text-[10px] font-mono uppercase tracking-wider text-slate-500">#</th>
-                  <th className="px-4 py-2 text-[10px] font-mono uppercase tracking-wider text-slate-500">Nama</th>
-                  <th className="px-4 py-2 text-[10px] font-mono uppercase tracking-wider text-slate-500">Email</th>
-                  <th className="px-4 py-2 text-[10px] font-mono uppercase tracking-wider text-slate-500">Password</th>
-                  <th className="px-4 py-2 text-[10px] font-mono uppercase tracking-wider text-slate-500">Skills</th>
-                  <th className="px-4 py-2 text-[10px] font-mono uppercase tracking-wider text-slate-500">Lokasi</th>
-                  <th className="px-4 py-2 text-[10px] font-mono uppercase tracking-wider text-slate-500">Tahun Lulus</th>
-                  <th className="px-4 py-2 text-[10px] font-mono uppercase tracking-wider text-slate-500">Status</th>
-                </tr>
-              </thead>
-              <tbody className="divide-y divide-slate-100">
-                {preview.map((p) => (
-                  <tr key={p.row} className={`${!p.valid ? 'bg-red-50' : ''}`}>
-                    <td className="px-4 py-2 text-slate-500 font-mono">{p.row}</td>
-                    <td className="px-4 py-2 text-slate-900">{p.name || <span className="text-red-400">(kosong)</span>}</td>
-                    <td className="px-4 py-2 text-slate-600">{p.email}</td>
-                    <td className="px-4 py-2 text-slate-400 font-mono">{'•'.repeat(Math.min(p.password.length, 8))}</td>
-                    <td className="px-4 py-2 text-slate-600 text-xs max-w-[150px] truncate">{p.skills || '—'}</td>
-                    <td className="px-4 py-2 text-slate-600 text-xs">{p.location || '—'}</td>
-                    <td className="px-4 py-2 text-slate-600 text-xs">{p.graduationYear || '—'}</td>
-                    <td className="px-4 py-2">
-                      {p.valid
-                        ? <span className="text-green-600 text-[10px] font-mono" title="Valid">✓</span>
-                        : <span className="text-red-500 text-[10px] font-mono" title={!p.name ? 'Nama kosong' : !p.email.endsWith('@amikomsolo.ac.id') ? 'Harus @amikomsolo.ac.id' : !/(?=.*[A-Z])(?=.*[a-z])(?=.*[0-9])/.test(p.password) || p.password.length < 8 ? 'Password: 8+ karakter (huruf besar, kecil, angka)' : 'Data tidak valid'}>✗</span>
-                      }
-                    </td>
-                  </tr>
-                ))}
-              </tbody>
-            </table>
+<table className="w-full text-sm">
+               <thead className="bg-slate-50 text-left">
+                 <tr>
+                   <th className="px-4 py-2 text-[10px] font-mono uppercase tracking-wider text-slate-500">#</th>
+                   <th className="px-4 py-2 text-[10px] font-mono uppercase tracking-wider text-slate-500">Nama</th>
+                   <th className="px-4 py-2 text-[10px] font-mono uppercase tracking-wider text-slate-500">Email</th>
+                   <th className="px-4 py-2 text-[10px] font-mono uppercase tracking-wider text-slate-500">Password</th>
+                   <th className="px-4 py-2 text-[10px] font-mono uppercase tracking-wider text-slate-500">Role</th>
+                   <th className="px-4 py-2 text-[10px] font-mono uppercase tracking-wider text-slate-500">Tahun Lulus</th>
+                   <th className="px-4 py-2 text-[10px] font-mono uppercase tracking-wider text-slate-500">Status</th>
+                 </tr>
+               </thead>
+               <tbody className="divide-y divide-slate-100">
+                 {preview.map((p) => (
+                   <tr key={p.row} className={`${!p.valid ? 'bg-red-50' : ''}`}>
+                     <td className="px-4 py-2 text-slate-500 font-mono">{p.row}</td>
+                     <td className="px-4 py-2 text-slate-900">{p.name || <span className="text-red-400">(kosong)</span>}</td>
+                     <td className="px-4 py-2 text-slate-600">{p.email}</td>
+                     <td className="px-4 py-2 text-slate-400 font-mono">{'•'.repeat(Math.min(p.password.length, 8))}</td>
+                     <td className="px-4 py-2">
+                       <span className={`text-[10px] font-mono px-1.5 py-0.5 rounded ${
+                         p.role === 'super_user' ? 'bg-amikom-purple/10 text-amikom-purple' : 'bg-slate-100 text-slate-600'
+                       }`}>
+                         {p.role}
+                       </span>
+                     </td>
+                     <td className="px-4 py-2 text-slate-600 font-mono">{p.graduationYear || '—'}</td>
+                     <td className="px-4 py-2">
+                       {p.valid
+                         ? <span className="text-green-600 text-[10px] font-mono" title="Valid">✓</span>
+                         : <span className="text-red-500 text-[10px] font-mono" title={!p.name ? 'Nama kosong' : !p.email.endsWith('@amikomsolo.ac.id') ? 'Harus @amikomsolo.ac.id' : p.password.length < 8 ? 'Password minimal 8 karakter' : p.role !== 'user' && p.role !== 'super_user' ? 'Role harus user atau super_user' : 'Data tidak valid'}>✗</span>
+                       }
+                     </td>
+                   </tr>
+                 ))}
+               </tbody>
+             </table>
           </div>
         </div>
       )}
