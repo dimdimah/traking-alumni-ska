@@ -507,20 +507,10 @@ export default function ProfilePage() {
             <p className="mt-1 text-xs text-slate-500">Atribut ini dipakai untuk menghitung tingkat kecocokan dengan lowongan kerja.</p>
           </div>
 
-          <div className="space-y-5">
-            <div className="space-y-2">
-              <label className="block text-xs font-medium text-slate-600 font-mono uppercase tracking-wider">Program Studi</label>
-              <select
-                value={programStudi}
-                onChange={(e) => setProgramStudi(e.target.value)}
-                className="w-full rounded-md border border-slate-200 bg-white px-3.5 py-2.5 text-sm text-slate-900 outline-none transition-all focus:border-amikom-purple focus:ring-2 focus:ring-amikom-purple/20"
-              >
-                <option value="">Pilih program studi...</option>
-                {PROGRAM_STUDI.map((program) => (
-                  <option key={program} value={program}>{program}</option>
-                ))}
-              </select>
-            </div>
+                  <div className="space-y-2">
+                    <label className="block text-xs font-medium text-slate-600 font-mono uppercase tracking-wider">Sertifikasi Kompetensi</label>
+                    <CertificationInput value={certifications} onChange={setCertifications} />
+                  </div>
 
             <div className="space-y-2">
               <label className="block text-xs font-medium text-slate-600 font-mono uppercase tracking-wider">Skill / Keahlian</label>
@@ -593,17 +583,112 @@ export default function ProfilePage() {
             ) : 'Simpan Perubahan'}
           </button>
         </div>
-      </form>
 
-      {/* ── Card 6 · Pengalaman Kerja (kiri) + Generate CV (kanan) ── */}
-      <div className="grid items-start gap-6 lg:grid-cols-3">
-        {/* Kiri — Riwayat Pekerjaan */}
-        <div className="rounded-lg border border-slate-200 bg-white shadow-sm animate-fade-in-up overflow-hidden lg:col-span-2" style={{ animationDelay: '0.05s' }}>
-          {/* Header */}
-          <div className="flex items-center justify-between px-6 py-4 border-b border-slate-100">
-            <div className="flex items-center gap-3">
-              <div className="flex h-8 w-8 items-center justify-center rounded-md bg-amikom-purple/10 text-amikom-purple">
-                <Briefcase className="h-4 w-4" />
+        {/* Right — Profile Preview */}
+        <div className="animate-fade-in-up" style={{ animationDelay: '0.1s' }}>
+          <div className="rounded-lg border border-slate-200 bg-white p-6 shadow-sm sticky top-20">
+            <p className="text-[11px] font-mono uppercase tracking-wider text-slate-500 mb-6">Profile Preview</p>
+            <div className="flex items-center gap-5">
+              <div className="flex h-16 w-16 items-center justify-center rounded-lg bg-slate-100 border border-slate-200">
+                <span className="text-2xl font-semibold text-slate-900 font-mono">
+                  {(fullName || profile?.email || '?').charAt(0).toUpperCase()}
+                </span>
+              </div>
+              <div>
+                <p className="text-lg font-semibold text-slate-900">{fullName || 'User'}</p>
+                <p className="text-sm text-slate-600">{profile?.email}</p>
+                <span className={`mt-2 inline-flex items-center gap-1.5 rounded-md px-3 py-1 text-[11px] font-medium font-mono tracking-wider uppercase ${
+                  profile?.role === 'super_user' ? 'bg-amikom-purple text-amikom-jonquil-warm' : 'bg-slate-100 text-slate-600 border border-slate-200'
+                }`}>
+                  <span className={`inline-block h-1.5 w-1.5 rounded-full ${profile?.role === 'super_user' ? 'bg-amikom-jonquil-warm' : 'bg-slate-500'}`} />
+                  {profile?.role === 'super_user' ? 'Super User' : 'Alumni'}
+                </span>
+              </div>
+            </div>
+
+            <div className="mt-6 space-y-4">
+              {nim && (
+                <div>
+                  <p className="text-[10px] font-mono uppercase tracking-wider text-slate-500">NIM</p>
+                  <p className="mt-0.5 text-sm text-slate-900">{nim}</p>
+                </div>
+              )}
+              {programStudi && (
+                <div>
+                  <p className="text-[10px] font-mono uppercase tracking-wider text-slate-500">Program Studi</p>
+                  <p className="mt-0.5 text-sm text-slate-900">{programStudi}</p>
+                </div>
+              )}
+              {skills && (
+                <div>
+                  <p className="text-[10px] font-mono uppercase tracking-wider text-slate-500">Skill / Keahlian</p>
+                  <p className="mt-0.5 text-sm text-slate-600">{skills}</p>
+                </div>
+              )}
+              {certifications && (
+                <div>
+                  <p className="text-[10px] font-mono uppercase tracking-wider text-slate-500">Sertifikasi Kompetensi</p>
+                  <p className="mt-0.5 text-sm text-slate-600 whitespace-pre-line">{certifications}</p>
+                </div>
+              )}
+              {jobInterests && (
+                <div>
+                  <p className="text-[10px] font-mono uppercase tracking-wider text-slate-500">Bidang / Posisi yang Diminati</p>
+                  <p className="mt-0.5 text-sm text-slate-600">{jobInterests}</p>
+                </div>
+              )}
+              {(preferredLocation || preferredType) && (
+                <div className="grid grid-cols-2 gap-3">
+                  {preferredLocation && (
+                    <div>
+                      <p className="text-[10px] font-mono uppercase tracking-wider text-slate-500">Preferensi Lokasi</p>
+                      <p className="mt-0.5 text-sm text-slate-600">{preferredLocation}</p>
+                    </div>
+                  )}
+                  {preferredType && (
+                    <div>
+                      <p className="text-[10px] font-mono uppercase tracking-wider text-slate-500">Tipe Pekerjaan</p>
+                      <p className="mt-0.5 text-sm text-slate-600">{preferredType}</p>
+                    </div>
+                  )}
+                </div>
+              )}
+              {graduationYear && (
+                <div>
+                  <p className="text-[10px] font-mono uppercase tracking-wider text-slate-500">Tahun Lulus</p>
+                  <p className="mt-0.5 text-sm text-slate-900">{graduationYear}</p>
+                </div>
+              )}
+              {phone && (
+                <div>
+                  <p className="text-[10px] font-mono uppercase tracking-wider text-slate-500">Telepon</p>
+                  <p className="mt-0.5 text-sm text-slate-900">{phone}</p>
+                </div>
+              )}
+              {bio && (
+                <div>
+                  <p className="text-[10px] font-mono uppercase tracking-wider text-slate-500">Bio</p>
+                  <p className="mt-0.5 text-sm text-slate-600">{bio}</p>
+                </div>
+              )}
+              <div className="h-px bg-slate-200" />
+              {/* Generate CV Button */}
+              <div>
+                <p className="text-[10px] font-mono uppercase tracking-wider text-slate-500 mb-2">
+                  Curriculum Vitae
+                </p>
+                <button
+                  type="button"
+                  onClick={() => setCvDialogOpen(true)}
+                  className="w-full inline-flex items-center justify-center gap-2 rounded-md bg-amikom-purple px-4 py-2.5 text-sm font-medium text-white transition-all active:scale-[0.98] hover:bg-amikom-purple-hover"
+                  aria-label="Buka preview dan unduh CV"
+                >
+                  <FileText className="h-4 w-4" aria-hidden="true" />
+                  Generate CV
+                </button>
+                <p className="mt-1.5 text-[10px] text-slate-400 text-center">
+                  Format PDF · ATS-friendly · Bahasa Indonesia &amp; English
+                </p>
               </div>
               <div>
                 <p className="text-[11px] font-mono uppercase tracking-wider text-slate-500">Curriculum Vitae</p>

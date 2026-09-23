@@ -1,10 +1,12 @@
 'use client'
 
-import { useState, useEffect, useCallback, useRef } from 'react'
+import { useState, useEffect, useMemo, useCallback, useRef } from 'react'
+import { getCachedProfile } from '@/lib/profile-cache'
 import { getJobRecommendations } from '@/lib/actions/matching'
 import { PageHeader } from '@/components/ui/page-header'
 import { Badge } from '@/components/ui/badge'
 import { Modal } from '@/components/ui/modal'
+import { SkillSuggestions } from '@/components/skill-suggestions'
 import MatchDebugPanel from '@/components/debug/match-debug-panel'
 import type { MatchResult } from '@/types/database'
 
@@ -41,6 +43,16 @@ export default function RekomendasiPage() {
   const [debugOpen, setDebugOpen] = useState(false)
   const [debugAuto, setDebugAuto] = useState(false)
   const timerRef = useRef<ReturnType<typeof setInterval> | null>(null)
+  const [userSkills, setUserSkills] = useState<string[]>(() => {
+    const cached = getCachedProfile()
+    return cached?.skills && Array.isArray(cached.skills) ? cached.skills : []
+  })
+
+  useEffect(() => {
+    setDebugAuto(
+      typeof window !== 'undefined' && new URLSearchParams(window.location.search).has('debug'),
+    )
+  }, [])
 
   useEffect(() => {
     setDebugAuto(
@@ -85,13 +97,29 @@ export default function RekomendasiPage() {
     }
   }, [loadRecommendations])
 
+  // Memoize sort + counts agar tidak recompute tiap render (20 cards × filter 3×)
+  const sorted = useMemo(() => [...results].sort((a, b) => {
+    if (sortBy === 'score') return b.score - a.score
+    return new Date(b.job.created_at).getTime() - new Date(a.job.created_at).getTime()
+  }), [results, sortBy])
+
+  // Auto-refresh: sesuaikan rekomendasi bila lowongan baru masuk (60 detik).
+  useEffect(() => {
+    timerRef.current = setInterval(() => {
+      loadRecommendations()
+    }, 60000)
+    return () => {
+      if (timerRef.current) clearInterval(timerRef.current)
+    }
+  }, [loadRecommendations])
+
   return (
     <div className="page-container space-y-8 pb-8">
       <PageHeader
         icon={<span className="text-[11px]">★</span>}
         label="Rekomendasi Kerja"
         title="Rekomendasi Lowongan."
-        subtitle="Lowongan dengan kecocokan tertinggi berdasarkan atribut profil kamu (program studi, skill, pengalaman kerja, sertifikasi, minat bidang, lokasi, dan tipe)."
+        subtitle="Lowongan yang dipilih berdasarkan profil dan preferensi kamu."
         action={
           <div className="flex items-center gap-2">
             <span className="text-[11px] text-slate-400 shrink-0">
@@ -107,8 +135,58 @@ export default function RekomendasiPage() {
               disabled={refreshing}
               className="shrink-0 rounded-md border border-slate-200 bg-white px-3 py-1.5 text-[11px] font-medium text-slate-600 hover:border-slate-400 hover:text-slate-900 transition-all disabled:opacity-60"
             >
-              {refreshing ? '…' : 'Segarkan'}
+              {refreshing ? '↻' : 'Segarkan'}
             </button>
+          </div>
+        }
+      />
+
+      {/* Sort controls */}
+      {!loading && results.length > 0 && (
+        <div className="flex items-center gap-3 animate-fade-in-up" style={{ animationDelay: '0.05s' }}>
+          <span className="text-xs font-mono text-slate-500">Urutkan:</span>
+          <button
+            onClick={() => setSortBy('score')}
+            className={`rounded-md px-3 py-1.5 text-xs font-medium font-mono transition-all ${
+              sortBy === 'score'
+                ? 'bg-amikom-purple text-white'
+                : 'border border-slate-200 bg-white text-slate-600 hover:border-slate-400'
+            }`}
+          >
+            Score Tertinggi
+          </button>
+          <button
+            onClick={() => setSortBy('date')}
+            className={`rounded-md px-3 py-1.5 text-xs font-medium font-mono transition-all ${
+              sortBy === 'date'
+                ? 'bg-amikom-purple text-white'
+                : 'border border-slate-200 bg-white text-slate-600 hover:border-slate-400'
+            }`}
+          >
+            Terbaru
+          </button>
+        </div>
+      )}
+
+      {/* Stats summary */}
+      {!loading && results.length > 0 && (
+        <div className="grid grid-cols-2 sm:grid-cols-3 gap-3 animate-fade-in-up" style={{ animationDelay: '0.08s' }}>
+          <div className="rounded-lg border border-slate-200 bg-white p-3 shadow-sm">
+            <div className="flex items-center justify-between">
+              <p className="font-mono text-2xl font-semibold text-slate-900">{results.length}</p>
+              <span className="text-[10px] font-mono uppercase tracking-wider text-slate-400">Total</span>
+            </div>
+            <p className="mt-0.5 text-xs font-medium text-slate-500">Total Match</p>
+          </div>
+
+          <div className="rounded-lg border border-emerald-200 bg-white p-3 shadow-sm">
+            <div className="flex items-center justify-between">
+              <p className="font-mono text-2xl font-semibold text-emerald-600">
+                {highCount}
+              </p>
+              <span className="text-[10px] font-mono uppercase tracking-wider text-emerald-500">Tinggi</span>
+            </div>
+            <p className="mt-0.5 text-xs font-medium text-emerald-700">High Match</p>
           </div>
         }
       />
@@ -128,7 +206,7 @@ export default function RekomendasiPage() {
             <p className="mt-2 text-xs text-red-500 font-mono">Error: {errorMsg}</p>
           )}
           <a
-            href="/user/profile"
+            href="/dashboard/profile"
             className="mt-4 rounded-md border border-slate-200 bg-white px-4 py-2 text-xs font-medium text-slate-600 hover:border-slate-400 hover:text-slate-900 transition-all"
           >
             Lengkapi Profil

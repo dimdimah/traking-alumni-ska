@@ -163,14 +163,14 @@ describe("Bulk Import — UI & UX", () => {
       })
     })
 
-    it("should show Role column (template GitHub) — nilai role dipaksa 'user' oleh server", async () => {
+    it("should not show Role column (role locked to user server-side)", async () => {
       const csv = "Nama,Email,Password,Role\nBudi,budi@amikomsolo.ac.id,Password123,super_user\nSiti,siti@amikomsolo.ac.id,Password456,user"
       render(<BulkImportForm />)
       const input = document.querySelector('input[type="file"]')! as HTMLInputElement as HTMLInputElement
       uploadFile(input, csv)
       await waitFor(() => {
-        expect(screen.queryByText("Role")).not.toBeNull()
-        expect(screen.queryByText("super_user")).not.toBeNull()
+        expect(screen.queryByText("super_user")).toBeNull()
+        expect(screen.queryByText("Role")).toBeNull()
       })
     })
 
