@@ -139,7 +139,7 @@ describe("TC 5.4 — API Route /api/generate-cv", () => {
     const cvData = {
       profile: makeProfile({ full_name: "Budi Santoso" }) as any,
       trackRecords: [makeTrackRecord() as any],
-      tracerStudy: makeTracerStudy() as any,
+      SistemAlumni: makeTracerStudy() as any,
     }
 
     mockGetCvData.mockResolvedValue(cvData)
@@ -160,7 +160,7 @@ describe("TC 5.4 — API Route /api/generate-cv", () => {
     const cvData = {
       profile: makeProfile({ full_name: "Budi Santoso" }) as any,
       trackRecords: [] as any,
-      tracerStudy: null as any,
+      SistemAlumni: null as any,
     }
 
     mockGetCvData.mockResolvedValue(cvData)
@@ -179,7 +179,7 @@ describe("TC 5.4 — API Route /api/generate-cv", () => {
     const cvData = {
       profile: makeProfile() as any,
       trackRecords: [] as any,
-      tracerStudy: null as any,
+      SistemAlumni: null as any,
     }
 
     mockGetCvData.mockResolvedValue(cvData)
@@ -223,7 +223,7 @@ describe("TC 5.5 — API Route Error Handling", () => {
     const cvData = {
       profile: makeProfile() as any,
       trackRecords: [] as any,
-      tracerStudy: null as any,
+      SistemAlumni: null as any,
     }
 
     mockGetCvData.mockResolvedValue(cvData)
@@ -243,7 +243,7 @@ describe("TC 5.5 — API Route Error Handling", () => {
     const cvData = {
       profile: makeProfile() as any,
       trackRecords: [] as any,
-      tracerStudy: null as any,
+      SistemAlumni: null as any,
     }
 
     mockGetCvData.mockResolvedValue(cvData)

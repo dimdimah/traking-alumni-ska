@@ -21,24 +21,69 @@ export const PROGRAM_STUDI = [
 ] as const
 export type ProgramStudi = (typeof PROGRAM_STUDI)[number]
 
-export const JOB_INTERESTS = [
-  'Backend Developer',
-  'Frontend Developer',
-  'Full Stack Developer',
-  'Mobile Developer',
-  'UI/UX Designer',
-  'Data Analyst',
-  'Data Scientist',
-  'Machine Learning Engineer',
-  'DevOps Engineer',
-  'Cloud Engineer',
-  'Cyber Security',
-  'Network Engineer',
-  'Database Administrator',
-  'IT Support',
-  'Software Engineer',
-  'QA Engineer',
-] as const
+// Daftar peran/posisi kerja yang dipakai untuk chip skill & minat kerja
+// (rekomendasi). Kategori diurutkan agar chip di profil tampil rapi.
+export const JOB_ROLE_CATEGORIES = {
+  'Design & Kreatif': [
+    'UI/UX Designer',
+    'Graphic Designer',
+    'Multimedia Designer',
+    'Video Editor',
+    'Motion Graphic Designer',
+    'Animator',
+    '3D Artist',
+    'Content Creator',
+  ],
+  Frontend: [
+    'Frontend Developer',
+    'React Developer',
+    'Vue.js Developer',
+    'Angular Developer',
+    'Next.js Developer',
+  ],
+  Backend: [
+    'Software Engineer',
+    'Backend Developer',
+    'Full Stack Developer',
+    'Node.js Developer',
+    'Python Developer',
+    'Java Developer',
+    'Golang Developer',
+    'PHP Developer',
+    'Laravel Developer',
+    'Django Developer',
+    'Spring Boot Developer',
+  ],
+  Mobile: [
+    'Mobile Developer',
+    'Flutter Developer',
+    'React Native Developer',
+    'Android Developer',
+    'iOS Developer',
+  ],
+  'Data & AI': [
+    'Data Scientist',
+    'Data Analyst',
+    'Machine Learning Engineer',
+    'Database Administrator',
+  ],
+  'DevOps & Cloud': [
+    'DevOps Engineer',
+    'Cloud Engineer',
+    'Kubernetes Engineer',
+  ],
+} as const
+
+// Gabungan: nilai kategori peran + peran tambahan lokal (dedup, urutan stabil)
+export const JOB_INTERESTS: readonly string[] = Array.from(
+  new Set([
+    ...Object.values(JOB_ROLE_CATEGORIES).flat(),
+    'Cyber Security',
+    'Network Engineer',
+    'IT Support',
+    'QA Engineer',
+  ]),
+)
 
 export const PREFERRED_LOCATIONS = [
   'Solo Raya',

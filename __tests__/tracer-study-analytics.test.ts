@@ -9,7 +9,7 @@
 
 import { describe, it, expect } from "@jest/globals"
 import { z } from "zod"
-import { tracerStudySchema } from "@/lib/schemas/tracer-study"
+import { SistemAlumniSchema as tracerStudySchema } from "@/lib/schemas/tracer-study"
 
 // ──────────────────────────────────────────
 // Re-implement getTracerStudyStats logic for testing
@@ -100,7 +100,7 @@ function makeResponse(overrides: Partial<TracerStudyResponse> = {}): TracerStudy
     id: 'test-id',
     user_id: 'user-1',
     graduation_year: 2023,
-    education_level: 'S1',
+    education_level: 'S1 Informatika',
     employment_status: 'Bekerja',
     company: 'PT Test',
     position: 'Developer',
@@ -300,7 +300,7 @@ describe("tracerStudySchema — Input Validation", () => {
     it("should accept valid year", () => {
       const result = tracerStudySchema.safeParse({
         graduation_year: 2024,
-        education_level: 'S1',
+        education_level: 'S1 Informatika',
         employment_status: 'Belum Bekerja',
       })
       expect(result.success).toBe(true)
@@ -309,7 +309,7 @@ describe("tracerStudySchema — Input Validation", () => {
     it("should accept year as string (coerced to number)", () => {
       const result = tracerStudySchema.safeParse({
         graduation_year: '2024',
-        education_level: 'S1',
+        education_level: 'S1 Informatika',
         employment_status: 'Belum Bekerja',
       })
       expect(result.success).toBe(true)
@@ -318,7 +318,7 @@ describe("tracerStudySchema — Input Validation", () => {
     it("should reject year before 1990", () => {
       const result = tracerStudySchema.safeParse({
         graduation_year: 1989,
-        education_level: 'S1',
+        education_level: 'S1 Informatika',
         employment_status: 'Belum Bekerja',
       })
       expect(result.success).toBe(false)
@@ -327,7 +327,7 @@ describe("tracerStudySchema — Input Validation", () => {
     it("should reject year after 2030", () => {
       const result = tracerStudySchema.safeParse({
         graduation_year: 2031,
-        education_level: 'S1',
+        education_level: 'S1 Informatika',
         employment_status: 'Belum Bekerja',
       })
       expect(result.success).toBe(false)
@@ -336,7 +336,7 @@ describe("tracerStudySchema — Input Validation", () => {
     it("should accept boundary year 1990", () => {
       const result = tracerStudySchema.safeParse({
         graduation_year: 1990,
-        education_level: 'S1',
+        education_level: 'S1 Informatika',
         employment_status: 'Belum Bekerja',
       })
       expect(result.success).toBe(true)
@@ -345,7 +345,7 @@ describe("tracerStudySchema — Input Validation", () => {
     it("should accept boundary year 2030", () => {
       const result = tracerStudySchema.safeParse({
         graduation_year: 2030,
-        education_level: 'S1',
+        education_level: 'S1 Informatika',
         employment_status: 'Belum Bekerja',
       })
       expect(result.success).toBe(true)
@@ -365,7 +365,7 @@ describe("tracerStudySchema — Input Validation", () => {
     })
 
     it("should accept valid education levels", () => {
-      for (const level of ['D3', 'S1', 'S2', 'S3']) {
+      for (const level of ['D3 Komputerisasi Akuntansi', 'D3 Manajemen Informatika', 'S1 Informatika', 'S1 Teknologi Informasi']) {
         const result = tracerStudySchema.safeParse({
           graduation_year: 2024,
           education_level: level,
@@ -393,7 +393,7 @@ describe("tracerStudySchema — Input Validation", () => {
     it("should reject empty string", () => {
       const result = tracerStudySchema.safeParse({
         graduation_year: 2024,
-        education_level: 'S1',
+        education_level: 'S1 Informatika',
         employment_status: '',
       })
       expect(result.success).toBe(false)
@@ -403,7 +403,7 @@ describe("tracerStudySchema — Input Validation", () => {
       for (const status of ['Bekerja', 'Belum Bekerja', 'Wirausaha', 'Melanjutkan Studi', 'Tidak bekerja / Mencari pekerjaan']) {
         const result = tracerStudySchema.safeParse({
           graduation_year: 2024,
-          education_level: 'S1',
+          education_level: 'S1 Informatika',
           employment_status: status,
           ...(status === 'Bekerja' || status === 'Wirausaha' ? { company: 'PT', position: 'Dev' } : {}),
         })
@@ -414,7 +414,7 @@ describe("tracerStudySchema — Input Validation", () => {
     it("should reject invalid employment status", () => {
       const result = tracerStudySchema.safeParse({
         graduation_year: 2024,
-        education_level: 'S1',
+        education_level: 'S1 Informatika',
         employment_status: 'random_status',
       })
       expect(result.success).toBe(false)
@@ -425,7 +425,7 @@ describe("tracerStudySchema — Input Validation", () => {
     it("should accept null company", () => {
       const result = tracerStudySchema.safeParse({
         graduation_year: 2024,
-        education_level: 'S1',
+        education_level: 'S1 Informatika',
         employment_status: 'Belum Bekerja',
         company: null,
       })
@@ -435,7 +435,7 @@ describe("tracerStudySchema — Input Validation", () => {
     it("should accept null position", () => {
       const result = tracerStudySchema.safeParse({
         graduation_year: 2024,
-        education_level: 'S1',
+        education_level: 'S1 Informatika',
         employment_status: 'Belum Bekerja',
         position: null,
       })
@@ -445,7 +445,7 @@ describe("tracerStudySchema — Input Validation", () => {
     it("should accept missing optional fields", () => {
       const result = tracerStudySchema.safeParse({
         graduation_year: 2024,
-        education_level: 'S1',
+        education_level: 'S1 Informatika',
         employment_status: 'Melanjutkan Studi',
       })
       expect(result.success).toBe(true)
@@ -456,7 +456,7 @@ describe("tracerStudySchema — Input Validation", () => {
     it("should require company when employment_status is Bekerja", () => {
       const result = tracerStudySchema.safeParse({
         graduation_year: 2024,
-        education_level: 'S1',
+        education_level: 'S1 Informatika',
         employment_status: 'Bekerja',
         company: null,
         position: 'Developer',
@@ -470,7 +470,7 @@ describe("tracerStudySchema — Input Validation", () => {
     it("should require position when employment_status is Bekerja", () => {
       const result = tracerStudySchema.safeParse({
         graduation_year: 2024,
-        education_level: 'S1',
+        education_level: 'S1 Informatika',
         employment_status: 'Bekerja',
         company: 'PT Test',
         position: null,
@@ -484,7 +484,7 @@ describe("tracerStudySchema — Input Validation", () => {
     it("should require company when employment_status is Wirausaha", () => {
       const result = tracerStudySchema.safeParse({
         graduation_year: 2024,
-        education_level: 'S1',
+        education_level: 'S1 Informatika',
         employment_status: 'Wirausaha',
         company: null,
         position: 'Owner',
@@ -498,7 +498,7 @@ describe("tracerStudySchema — Input Validation", () => {
     it("should NOT require company/position when Belum Bekerja", () => {
       const result = tracerStudySchema.safeParse({
         graduation_year: 2024,
-        education_level: 'S1',
+        education_level: 'S1 Informatika',
         employment_status: 'Belum Bekerja',
         company: null,
         position: null,
@@ -509,7 +509,7 @@ describe("tracerStudySchema — Input Validation", () => {
     it("should NOT require company/position when Melanjutkan Studi", () => {
       const result = tracerStudySchema.safeParse({
         graduation_year: 2024,
-        education_level: 'S1',
+        education_level: 'S1 Informatika',
         employment_status: 'Melanjutkan Studi',
         company: null,
         position: null,
@@ -561,7 +561,7 @@ describe("canProceed — Multi-step Form Navigation", () => {
 
   describe("Step 1: Education Level", () => {
     it("should allow non-empty education_level", () => {
-      expect(canProceed(1, { ...baseFormData, education_level: 'S1' })).toBe(true)
+      expect(canProceed(1, { ...baseFormData, education_level: 'S1 Informatika' })).toBe(true)
     })
 
     it("should reject empty education_level", () => {

@@ -27,9 +27,16 @@ function timeAgo(dateStr: string): string {
 
 interface JobVacanciesProps {
   items: Pick<Job, 'id' | 'title' | 'company' | 'location' | 'type' | 'salary' | 'created_at'>[]
+  isLoggedIn?: boolean
+  dashboardHref?: string
 }
 
-export function JobVacancies({ items }: JobVacanciesProps) {
+export function JobVacancies({ items, isLoggedIn = false, dashboardHref = '/dashboard' }: JobVacanciesProps) {
+  const careerHref = isLoggedIn
+    ? dashboardHref === '/admin'
+      ? '/admin/career-center'
+      : '/dashboard/career'
+    : '/login?next=%2Fdashboard%2Fcareer'
   return (
     <section id="lowongan" className="bg-white py-[80px] lg:py-[120px] scroll-mt-20">
       <div className="mx-auto max-w-[1280px] px-6 lg:px-12">
@@ -90,10 +97,10 @@ export function JobVacancies({ items }: JobVacanciesProps) {
                     </div>
 
                       <Link
-                       href="/login"
+                       href={careerHref}
                        className="mt-auto block w-full text-center py-2.5 rounded-lg bg-amikom-purple/5 text-amikom-purple text-[14px] font-semibold hover:bg-amikom-purple hover:text-white transition-colors"
                      >
-                      Lamar Sekarang
+                      {isLoggedIn ? 'Lamar di Portal' : 'Lamar Sekarang'}
                     </Link>
                   </div>
                 </HoverScale>
@@ -104,10 +111,10 @@ export function JobVacancies({ items }: JobVacanciesProps) {
 
         <div className="text-center">
           <Link
-            href="/login"
+            href={careerHref}
             className="inline-flex items-center gap-2 text-[15px] font-semibold text-amikom-purple hover:text-amikom-purple-hover transition-colors"
           >
-            Lihat lebih banyak lowongan di portal
+            {isLoggedIn ? 'Lihat semua lowongan di portal' : 'Lihat lebih banyak lowongan di portal'}
             <svg className="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
               <path strokeLinecap="round" strokeLinejoin="round" d="M17 8l4 4m0 0l-4 4m4-4H3" />
             </svg>

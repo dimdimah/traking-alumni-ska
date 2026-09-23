@@ -160,3 +160,110 @@ export function computeSimilarityScores(
     return cosineSimilarity(queryVector, docVector)
   })
 }
+
+/**
+ * Rincian perhitungan cosine similarity antara dua vektor TF-IDF.
+ *
+ * Mengembalikan komponen rumus:
+ *   cos(θ) = (A · B) / (||A|| × ||B||)
+ *   A · B    = dotProduct (pembilang)
+ *   ||A||    = magnitudeProfile
+ *   ||B||    = magnitudeJob
+ *   score    = hasil akhir (sama dengan cosineSimilarity)
+ */
+export function computeCosineBreakdown(
+  queryTokens: string[],
+  docTokens: string[],
+  idf: Map<string, number> = computeIDF([queryTokens, docTokens]),
+): {
+  dotProduct: number
+  magnitudeProfile: number
+  magnitudeJob: number
+  score: number
+} {
+  const queryVector = computeTFIDF(computeTF(queryTokens), idf)
+  const docVector = computeTFIDF(computeTF(docTokens), idf)
+
+  let dotProduct = 0
+  let magA = 0
+  let magB = 0
+
+  for (const [term, weightA] of queryVector) {
+    magA += weightA * weightA
+    const weightB = docVector.get(term)
+    if (weightB !== undefined) {
+      dotProduct += weightA * weightB
+    }
+  }
+  for (const weight of docVector.values()) {
+    magB += weight * weight
+  }
+
+  magA = Math.sqrt(magA)
+  magB = Math.sqrt(magB)
+
+  if (magA === 0 || magB === 0) {
+    return { dotProduct, magnitudeProfile: magA, magnitudeJob: magB, score: 0 }
+  }
+
+  return { dotProduct, magnitudeProfile: magA, magnitudeJob: magB, score: dotProduct / (magA * magB) }
+}
+
+// Tipe rincian bobot untuk satu pasangan profil ↔ lowongan
+export type MatchTermWeight = {
+  term: string
+  profileTf: number
+  jobTf: number
+  idf: number
+  profileWeight: number
+  jobWeight: number
+  contribution: number
+}
+
+/**
+ * Membuat rincian perhitungan bobot TF-IDF untuk setiap kata yang cocok
+ * antara dokumen profil alumni dan dokumen lowongan kerja.
+ *
+ * - TF        : frekuensi kemunculan kata di masing-masing dokumen
+ * - IDF       : seberapa langka kata di seluruh koleksi dokumen
+ *               (lm(logN/df)+1) — kata yang jarang muncul berbobot lebih besar
+ * - Bobot     : TF × IDF
+ * - Kontribusi: bobotProfil × bobotLowongan → penyusun pembilang (dot product)
+ *
+ * Sebaiknya `idf` dihitung sekali untuk seluruh koleksi (query + semua dokumen)
+ * agar datanya konsisten dengan skor cosine yang dihasilkan
+ * `computeSimilarityScores`.
+ */
+export function computeMatchBreakdown(
+  queryTokens: string[],
+  docTokens: string[],
+  idf: Map<string, number> = computeIDF([queryTokens, docTokens]),
+): MatchTermWeight[] {
+  const querySet = new Set(queryTokens)
+  const docSet = new Set(docTokens)
+  const matchedTerms = [...docSet].filter((t) => querySet.has(t))
+
+  if (matchedTerms.length === 0) return []
+
+  const queryTF = computeTF(queryTokens)
+  const docTF = computeTF(docTokens)
+
+  return matchedTerms
+    .map((term) => {
+      const profileTf = queryTF.get(term) || 0
+      const jobTf = docTF.get(term) || 0
+      const termIdf = idf.get(term) || 0
+      const profileWeight = profileTf * termIdf
+      const jobWeight = jobTf * termIdf
+      return {
+        term,
+        profileTf,
+        jobTf,
+        idf: termIdf,
+        profileWeight,
+        jobWeight,
+        contribution: profileWeight * jobWeight,
+      }
+    })
+    .sort((a, b) => b.contribution - a.contribution)
+}

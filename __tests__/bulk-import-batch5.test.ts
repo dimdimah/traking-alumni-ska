@@ -85,7 +85,6 @@ describe("Bulk Import — Kirim 5 Data Sekaligus ke DB", () => {
         email_confirm: true,
         user_metadata: {
           display_name: r.name,
-          role: r.role,
         },
       })
     })
@@ -206,14 +205,12 @@ describe("Bulk Import — Kirim 5 Data Sekaligus ke DB", () => {
     expect(res.success).toBe(5)
 
     const calls = mockCreateUser.mock.calls
-    expect(calls[0][0].user_metadata.role).toBe("user")
-    expect(calls[1][0].user_metadata.role).toBe("super_user")
-    expect(calls[2][0].user_metadata.role).toBe("user")
-    expect(calls[3][0].user_metadata.role).toBe("super_user")
-    expect(calls[4][0].user_metadata.role).toBe("user")
+    calls.forEach(call => {
+      expect(call[0].user_metadata).not.toHaveProperty("role")
+    })
   })
 
-  it("should handle 5 records without Role column (all default to user)", async () => {
+  it("should handle 5 records without Role column (no role in metadata)", async () => {
     const csv = [
       "Nama,Email,Password",
       "User1,user1@amikomsolo.ac.id,password123",
@@ -228,7 +225,7 @@ describe("Bulk Import — Kirim 5 Data Sekaligus ke DB", () => {
     expect(res.success).toBe(5)
     const calls = mockCreateUser.mock.calls
     calls.forEach(call => {
-      expect(call[0].user_metadata.role).toBe("user")
+      expect(call[0].user_metadata).not.toHaveProperty("role")
     })
   })
 

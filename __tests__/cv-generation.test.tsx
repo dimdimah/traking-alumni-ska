@@ -30,14 +30,14 @@ jest.mock("@react-pdf/renderer", () => ({
 
 jest.mock("next/server", () => ({
   NextRequest: class extends (globalThis.Request || function() {}) {},
-  NextResponse: {
-    json: (body: any, init?: any) => {
+  NextResponse: class extends (globalThis.Response || function() {}) {
+    static json(body: any, init?: any) {
       const ResponseCtor = globalThis.Response || function() {}
       return new ResponseCtor(JSON.stringify(body), {
         status: init?.status || 200,
         headers: { "Content-Type": "application/json" },
       })
-    },
+    }
   },
 }))
 
@@ -183,7 +183,7 @@ describe("TC 5.1 — getCvData Server Action", () => {
     expect(result).not.toBeNull()
     expect(result?.profile).toEqual(profile)
     expect(result?.trackRecords).toEqual(trackRecords)
-    expect(result?.tracerStudy).toEqual(tracerStudy)
+    expect(result?.SistemAlumni).toEqual(tracerStudy)
   })
 
   it("should return null when user is not authenticated", async () => {
@@ -233,7 +233,7 @@ describe("TC 5.1 — getCvData Server Action", () => {
 
     expect(result).not.toBeNull()
     expect(result?.trackRecords).toEqual([])
-    expect(result?.tracerStudy).toBeNull()
+    expect(result?.SistemAlumni).toBeNull()
   })
 
   it("should return null when tracer study does not exist", async () => {
@@ -253,7 +253,7 @@ describe("TC 5.1 — getCvData Server Action", () => {
     const result = await getCvData()
 
     expect(result).not.toBeNull()
-    expect(result?.tracerStudy).toBeNull()
+    expect(result?.SistemAlumni).toBeNull()
   })
 
   it("should fetch track records ordered by start_date descending", async () => {
@@ -320,7 +320,7 @@ describe("TC 5.2 — CvTemplate Component Rendering (ID)", () => {
   const mockData: CvData = {
     profile: makeProfile() as any,
     trackRecords: [makeTrackRecord() as any],
-    tracerStudy: makeTracerStudy() as any,
+    SistemAlumni: makeTracerStudy() as any,
   }
 
   beforeEach(() => {
@@ -335,10 +335,10 @@ describe("TC 5.2 — CvTemplate Component Rendering (ID)", () => {
     renderWithWrapper(<CvTemplate data={mockData} lang="id" />)
     expect(mockDocument).toHaveBeenCalledWith(
       expect.objectContaining({
-        title: "CV — Budi Santoso",
+        title: "CV - Budi Santoso",
         author: "Budi Santoso",
         subject: "Curriculum Vitae",
-        creator: "SITRACK — Universitas Amikom Surakarta",
+        creator: "SITRACK - STMIK Amikom Surakarta",
         producer: "SITRACK",
       }),
       expect.anything()
@@ -365,7 +365,7 @@ describe("TC 5.2 — CvTemplate Component Rendering (ID)", () => {
   it("should render header section with name", () => {
     renderWithWrapper(<CvTemplate data={mockData} lang="id" />)
     expect(mockView).toHaveBeenCalledWith(
-      expect.objectContaining({ style: expect.objectContaining({ borderBottomWidth: 2, borderBottomColor: "#700070" }) }),
+      expect.objectContaining({ style: expect.objectContaining({ marginBottom: 18, paddingBottom: 12 }) }),
       expect.anything()
     )
     const nameCalls = mockText.mock.calls.filter(
@@ -401,27 +401,28 @@ describe("TC 5.2 — CvTemplate Component Rendering (ID)", () => {
     expect(skillsTitleCalls.length).toBeGreaterThanOrEqual(1)
 
     const skillTexts = mockText.mock.calls.filter(
-      (args: any[]) => ["React", "TypeScript", "Node.js", "Supabase"].includes(args[0]?.children)
+      (args: any[]) => args[0]?.children === "React, TypeScript, Node.js, Supabase"
     )
-    expect(skillTexts.length).toBe(4)
+    expect(skillTexts.length).toBe(1)
   })
 
   it("should render work experience section with track records", () => {
     renderWithWrapper(<CvTemplate data={mockData} lang="id" />)
     const expTitleCalls = mockText.mock.calls.filter(
-      (args: any[]) => args[0]?.children === "Pengalaman Kerja"
+      (args: any[]) => args[0]?.children === "Pengalaman Organisasi dan Proyek"
     )
     expect(expTitleCalls.length).toBeGreaterThanOrEqual(1)
 
-    const positionCalls = mockText.mock.calls.filter(
-      (args: any[]) => args[0]?.children === "Software Engineer"
-    )
-    expect(positionCalls.length).toBeGreaterThanOrEqual(1)
-
-    const companyCalls = mockText.mock.calls.filter(
-      (args: any[]) => args[0]?.children === "PT Teknologi Indonesia"
-    )
-    expect(companyCalls.length).toBeGreaterThanOrEqual(1)
+    const expTexts = mockText.mock.calls
+      .map((args: any[]) => {
+        const children = args[0]?.children
+        if (typeof children === "string") return children
+        if (Array.isArray(children)) return children.filter((c: any) => typeof c === "string").join("")
+        return ""
+      })
+      .join(" ")
+    expect(expTexts).toContain("Software Engineer")
+    expect(expTexts).toContain("PT Teknologi Indonesia")
   })
 
   it("should render education section with university and graduation year", () => {
@@ -432,7 +433,7 @@ describe("TC 5.2 — CvTemplate Component Rendering (ID)", () => {
     expect(eduTitleCalls.length).toBeGreaterThanOrEqual(1)
 
     const uniTexts = mockText.mock.calls.filter(
-      (args: any[]) => args[0]?.children === "Universitas Amikom Surakarta"
+      (args: any[]) => args[0]?.children === "STMIK Amikom Surakarta"
     )
     expect(uniTexts.length).toBeGreaterThanOrEqual(1)
 
@@ -463,7 +464,7 @@ describe("TC 5.2b — CvTemplate Component Rendering (EN)", () => {
   const mockData: CvData = {
     profile: makeProfile() as any,
     trackRecords: [makeTrackRecord() as any],
-    tracerStudy: makeTracerStudy() as any,
+    SistemAlumni: makeTracerStudy() as any,
   }
 
   beforeEach(() => {
@@ -480,15 +481,10 @@ describe("TC 5.2b — CvTemplate Component Rendering (EN)", () => {
     const enLabels = [
       "Professional Summary",
       "Skills",
-      "Work Experience",
+      "Organizational and Project Experience",
       "Education",
       "Present",
-      "Amikom Surakarta University",
-      "Graduation Year",
-      "Student ID",
-      "Phone",
-      "Email",
-      "Location",
+      "STMIK Amikom Surakarta",
     ]
 
     const allTexts: string[] = []
@@ -526,7 +522,7 @@ describe("TC 5.3 — CvTemplate Missing Optional Fields", () => {
     const mockData: CvData = {
       profile: makeProfile({ email: null, phone: null, location: null }) as any,
       trackRecords: [],
-      tracerStudy: null,
+      SistemAlumni: null,
     }
 
     renderWithWrapper(<CvTemplate data={mockData} lang="id" />)
@@ -541,7 +537,7 @@ describe("TC 5.3 — CvTemplate Missing Optional Fields", () => {
     const mockData: CvData = {
       profile: makeProfile({ bio: null }) as any,
       trackRecords: [],
-      tracerStudy: null,
+      SistemAlumni: null,
     }
 
     renderWithWrapper(<CvTemplate data={mockData} lang="id" />)
@@ -556,7 +552,7 @@ describe("TC 5.3 — CvTemplate Missing Optional Fields", () => {
     const mockData: CvData = {
       profile: makeProfile({ skills: [] }) as any,
       trackRecords: [],
-      tracerStudy: null,
+      SistemAlumni: null,
     }
 
     renderWithWrapper(<CvTemplate data={mockData} lang="id" />)
@@ -571,13 +567,13 @@ describe("TC 5.3 — CvTemplate Missing Optional Fields", () => {
     const mockData: CvData = {
       profile: makeProfile() as any,
       trackRecords: [],
-      tracerStudy: null,
+      SistemAlumni: null,
     }
 
     renderWithWrapper(<CvTemplate data={mockData} lang="id" />)
 
     const expCalls = mockText.mock.calls.filter(
-      (args: any[]) => args[0]?.children === "Pengalaman Kerja"
+      (args: any[]) => args[0]?.children === "Pengalaman Organisasi dan Proyek"
     )
     expect(expCalls).toHaveLength(0)
   })
@@ -586,7 +582,7 @@ describe("TC 5.3 — CvTemplate Missing Optional Fields", () => {
     const mockData: CvData = {
       profile: makeProfile() as any,
       trackRecords: [],
-      tracerStudy: null,
+      SistemAlumni: null,
     }
 
     renderWithWrapper(<CvTemplate data={mockData} lang="id" />)
@@ -601,7 +597,7 @@ describe("TC 5.3 — CvTemplate Missing Optional Fields", () => {
     const mockData: CvData = {
       profile: makeProfile({ nim: null }) as any,
       trackRecords: [],
-      tracerStudy: null,
+      SistemAlumni: null,
     }
 
     renderWithWrapper(<CvTemplate data={mockData} lang="id" />)
@@ -620,7 +616,7 @@ describe("TC 5.3 — CvTemplate Missing Optional Fields", () => {
     const mockData: CvData = {
       profile: makeProfile({ full_name: "Anonim", education_level: null, nim: null }) as any,
       trackRecords: [],
-      tracerStudy: null,
+      SistemAlumni: null,
     }
 
     renderWithWrapper(<CvTemplate data={mockData} lang="id" />)
@@ -639,10 +635,61 @@ import { render } from "@testing-library/react"
 function renderWithWrapper(ui: React.ReactElement) {
   return render(ui)
 }
+// ═══════════════════════════════════════════════════════════════════════════════
+// TC 5.4 — API Route /api/generate-cv
+// ═══════════════════════════════════════════════════════════════════════════════
+
+describe("TC 5.4 — API Route /api/generate-cv", () => {
+  let mockGetCvData: jest.Mock
+  let mockRenderToBuffer: jest.Mock
+
+  beforeEach(() => {
+    jest.resetModules()
+
+    mockGetCvData = jest.fn()
+    mockRenderToBuffer = jest.fn()
+
+    jest.mock("@/lib/actions/cv", () => ({
+      getCvData: mockGetCvData,
+    }))
+
+    jest.mock("@react-pdf/renderer", () => ({
+      Document: mockDocument,
+      Page: mockPage,
+      Text: mockText,
+      View: mockView,
+      StyleSheet: mockStyleSheet,
+      Font: {},
+      renderToBuffer: mockRenderToBuffer,
+    }))
+  })
+
+  it("should return PDF response with correct headers when authenticated", async () => {
+    const cvData: CvData = {
+      profile: makeProfile({ full_name: "Budi Santoso" }) as any,
+      trackRecords: [makeTrackRecord() as any],
+      SistemAlumni: makeTracerStudy() as any,
+    }
+
+    mockGetCvData.mockResolvedValue(cvData)
+    mockRenderToBuffer.mockResolvedValue(Buffer.from("fake-pdf-content"))
+
+    const { GET } = await import("@/app/api/generate-cv/route")
+
+    const request = new Request("http://localhost/api/generate-cv?lang=id")
+    const response = await GET(request as any)
+
+    expect(response.status).toBe(200)
+    expect(response.headers.get("Content-Type")).toBe("application/pdf")
+    expect(response.headers.get("Content-Disposition")).toContain('filename="CV_Budi_Santoso_ID.pdf"')
+    expect(response.headers.get("Cache-Control")).toBe("no-store")
+  })
+
+  it("should return English filename when lang=en", async () => {
     const cvData: CvData = {
       profile: makeProfile({ full_name: "Budi Santoso" }) as any,
       trackRecords: [] as any,
-      tracerStudy: null as any,
+      SistemAlumni: null as any,
     }
 
     mockGetCvData.mockResolvedValue(cvData)
@@ -661,7 +708,7 @@ function renderWithWrapper(ui: React.ReactElement) {
     const cvData: CvData = {
       profile: makeProfile() as any,
       trackRecords: [] as any,
-      tracerStudy: null as any,
+      SistemAlumni: null as any,
     }
 
     mockGetCvData.mockResolvedValue(cvData)
@@ -723,7 +770,7 @@ describe("TC 5.5 — API Route Error Handling", () => {
     const cvData: CvData = {
       profile: makeProfile() as any,
       trackRecords: [] as any,
-      tracerStudy: null as any,
+      SistemAlumni: null as any,
     }
 
     mockGetCvData.mockResolvedValue(cvData)
@@ -743,7 +790,7 @@ describe("TC 5.5 — API Route Error Handling", () => {
     const cvData: CvData = {
       profile: makeProfile() as any,
       trackRecords: [] as any,
-      tracerStudy: null as any,
+      SistemAlumni: null as any,
     }
 
     mockGetCvData.mockResolvedValue(cvData)
@@ -757,13 +804,3 @@ describe("TC 5.5 — API Route Error Handling", () => {
     expect(response.status).toBe(200)
   })
 })
-
-// ═══════════════════════════════════════════════════════════════════════════════
-// Helper — render with mocked react-pdf wrapper
-// ═══════════════════════════════════════════════════════════════════════════════
-
-import { render } from "@testing-library/react"
-
-function renderWithWrapper(ui: React.ReactElement) {
-  return render(ui)
-}

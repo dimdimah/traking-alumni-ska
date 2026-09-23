@@ -35,7 +35,7 @@ export async function updateProfile(formData: FormData) {
     ? parsed.data.skills.split(/[,;]/).map(s => s.trim()).filter(Boolean)
     : []
   const certificationsArray = parsed.data.certifications
-    ? parsed.data.certifications.split(/[,;]/).map(s => s.trim()).filter(Boolean)
+    ? parsed.data.certifications.split(/\r?\n/).map(s => s.trim()).filter(Boolean)
     : []
   const jobInterestsArray = parsed.data.job_interests
     ? parsed.data.job_interests.split(/[,;]/).map(s => s.trim()).filter(Boolean)

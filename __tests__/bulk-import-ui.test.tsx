@@ -57,7 +57,7 @@ describe("Bulk Import — UI & UX", () => {
   })
 
   describe("File Upload & Preview", () => {
-    const validCSV = "Nama,Email,Password,Role\nBudi,budi@amikomsolo.ac.id,password123,user\nSiti,siti@amikomsolo.ac.id,password456,user"
+    const validCSV = "Nama,Email,Password,Role\nBudi,budi@amikomsolo.ac.id,Password123,user\nSiti,siti@amikomsolo.ac.id,Password456,user"
 
     it("should show file name after upload", async () => {
       render(<BulkImportForm />)
@@ -163,14 +163,14 @@ describe("Bulk Import — UI & UX", () => {
       })
     })
 
-    it("should show role badge for each row", async () => {
-      const csv = "Nama,Email,Password,Role\nBudi,budi@amikomsolo.ac.id,password123,super_user\nSiti,siti@amikomsolo.ac.id,password456,user"
+    it("should not show Role column (role locked to user server-side)", async () => {
+      const csv = "Nama,Email,Password,Role\nBudi,budi@amikomsolo.ac.id,Password123,super_user\nSiti,siti@amikomsolo.ac.id,Password456,user"
       render(<BulkImportForm />)
       const input = document.querySelector('input[type="file"]')! as HTMLInputElement as HTMLInputElement
       uploadFile(input, csv)
       await waitFor(() => {
-        expect(screen.getByText("super_user")).toBeTruthy()
-        expect(screen.getAllByText("user").length).toBeGreaterThanOrEqual(1)
+        expect(screen.queryByText("super_user")).toBeNull()
+        expect(screen.queryByText("Role")).toBeNull()
       })
     })
 

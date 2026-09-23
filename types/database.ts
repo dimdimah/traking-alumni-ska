@@ -190,6 +190,69 @@ export type MatchResult = {
   score: number
 }
 
+// ─── Diagnostic payload (mode debug ?debug=1 di halaman rekomendasi) ───
+export type DebugTermWeight = {
+  term: string
+  profileTf: number
+  jobTf: number
+  idf: number
+  profileWeight: number
+  jobWeight: number
+  contribution: number
+}
+
+// Rincian rumus cosine similarity untuk satu pasangan profil ↔ lowongan
+export type CosineBreakdown = {
+  dotProduct: number
+  magnitudeProfile: number
+  magnitudeJob: number
+  score: number
+}
+
+export type JobMatchDebug = {
+  jobId: string
+  title: string
+  company: string
+  location: string | null
+  score: number
+  jobTokens: string[]
+  matchedTerms: DebugTermWeight[]
+  cosine: CosineBreakdown
+}
+
+// Sumber satu atribut saat dokumen profil disusun
+export type ProfileSourceField = {
+  label: string
+  value: string | null
+}
+
+// Contoh dokumen lowongan (raw + token) untuk panel "Tahapan Pembentukan Dokumen"
+export type JobDocSample = {
+  title: string
+  company: string
+  raw: string
+  tokens: string[]
+  score: number
+  // Nilai mentah tiap bagian yang digabung jadi dokumen (buildJobDocument)
+  fields: {
+    title: string
+    description: string
+    skills: string
+    location: string
+    type: string
+  }
+}
+
+export type MatchDebugPayload = {
+  generatedAt: string
+  totalJobs: number
+  profileSource: ProfileSourceField[]
+  profileRaw: string
+  profileTokens: string[]
+  jobSamples: JobDocSample[]
+  entries: JobMatchDebug[]
+}
+
 // ─── Database type helper ───
 export type Database = {
   public: {

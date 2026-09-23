@@ -1,12 +1,13 @@
 'use client'
 
-import { useState, useEffect, useMemo } from 'react'
+import { useState, useEffect, useMemo, useCallback, useRef } from 'react'
 import { getCachedProfile } from '@/lib/profile-cache'
 import { getJobRecommendations } from '@/lib/actions/matching'
 import { PageHeader } from '@/components/ui/page-header'
 import { Badge } from '@/components/ui/badge'
 import { Modal } from '@/components/ui/modal'
 import { SkillSuggestions } from '@/components/skill-suggestions'
+import MatchDebugPanel from '@/components/debug/match-debug-panel'
 import type { MatchResult } from '@/types/database'
 
 
@@ -42,9 +43,13 @@ function ScoreBar({ score }: { score: number }) {
 export default function RekomendasiPage() {
   const [results, setResults] = useState<MatchResult[]>([])
   const [loading, setLoading] = useState(true)
+  const [refreshing, setRefreshing] = useState(false)
   const [selectedJob, setSelectedJob] = useState<MatchResult | null>(null)
   const [sortBy, setSortBy] = useState<'score' | 'date'>('score')
   const [errorMsg, setErrorMsg] = useState<string | null>(null)
+  const [debugOpen, setDebugOpen] = useState(false)
+  const [debugAuto, setDebugAuto] = useState(false)
+  const timerRef = useRef<ReturnType<typeof setInterval> | null>(null)
   const [userSkills, setUserSkills] = useState<string[]>(() => {
     const cached = getCachedProfile()
     return cached?.skills && Array.isArray(cached.skills) ? cached.skills : []
@@ -61,19 +66,47 @@ export default function RekomendasiPage() {
   }, [userSkills.length])
 
   useEffect(() => {
-    ;(async () => {
-      try {
-        const data = await getJobRecommendations(20)
-        setResults(data)
-      } catch (err) {
-        const msg = err instanceof Error ? err.message : 'Terjadi kesalahan'
-        console.error('Gagal memuat rekomendasi:', err)
-        setErrorMsg(msg)
-      } finally {
-        setLoading(false)
-      }
-    })()
+    setDebugAuto(
+      typeof window !== 'undefined' && new URLSearchParams(window.location.search).has('debug'),
+    )
   }, [])
+
+  const showDebug = debugOpen || debugAuto
+
+  // Reload rekomendasi. Lowongan terus bertambah, jadi daftar disegarkan berkala.
+  const loadRecommendations = useCallback(async (opts?: { initial?: boolean }) => {
+    if (opts?.initial) {
+      setLoading(true)
+    } else {
+      setRefreshing(true)
+    }
+    setErrorMsg(null)
+    try {
+      const data = await getJobRecommendations(20)
+      setResults(data)
+    } catch (err) {
+      const msg = err instanceof Error ? err.message : 'Terjadi kesalahan'
+      console.error('Gagal memuat rekomendasi:', err)
+      setErrorMsg(msg)
+    } finally {
+      setLoading(false)
+      setRefreshing(false)
+    }
+  }, [])
+
+  useEffect(() => {
+    loadRecommendations({ initial: true })
+  }, [loadRecommendations])
+
+  // Auto-refresh: sesuaikan rekomendasi bila lowongan baru masuk (60 detik).
+  useEffect(() => {
+    timerRef.current = setInterval(() => {
+      loadRecommendations()
+    }, 60000)
+    return () => {
+      if (timerRef.current) clearInterval(timerRef.current)
+    }
+  }, [loadRecommendations])
 
   // Memoize sort + counts agar tidak recompute tiap render (20 cards × filter 3×)
   const sorted = useMemo(() => [...results].sort((a, b) => {
@@ -91,6 +124,25 @@ export default function RekomendasiPage() {
         label="Rekomendasi Kerja"
         title="Rekomendasi Lowongan."
         subtitle="Lowongan yang dipilih berdasarkan profil dan preferensi kamu."
+        action={
+          <div className="flex items-center gap-2">
+            <span className="text-[11px] text-slate-400 shrink-0">
+              {refreshing
+                ? 'Menyegarkan…'
+                : results.length > 0
+                  ? `${results.length} lowongan teratas`
+                  : ''}
+            </span>
+            <button
+              type="button"
+              onClick={() => loadRecommendations()}
+              disabled={refreshing}
+              className="shrink-0 rounded-md border border-slate-200 bg-white px-3 py-1.5 text-[11px] font-medium text-slate-600 hover:border-slate-400 hover:text-slate-900 transition-all disabled:opacity-60"
+            >
+              {refreshing ? '↻' : 'Segarkan'}
+            </button>
+          </div>
+        }
       />
 
       {/* Sort controls */}
@@ -168,24 +220,13 @@ export default function RekomendasiPage() {
             <p className="mt-2 text-xs text-red-500 font-mono">Error: {errorMsg}</p>
           )}
           <a
-            href="/user/profile"
+            href="/dashboard/profile"
             className="mt-4 rounded-md border border-slate-200 bg-white px-4 py-2 text-xs font-medium text-slate-600 hover:border-slate-400 hover:text-slate-900 transition-all"
           >
             Lengkapi Profil
           </a>
           <button
-            onClick={async () => {
-              setLoading(true)
-              setErrorMsg(null)
-              try {
-                const data = await getJobRecommendations(20)
-                setResults(data)
-              } catch (err) {
-                setErrorMsg(err instanceof Error ? err.message : 'Terjadi kesalahan')
-              } finally {
-                setLoading(false)
-              }
-            }}
+            onClick={() => loadRecommendations({ initial: true })}
             className="mt-3 text-xs text-amikom-purple underline underline-offset-2 hover:text-amikom-purple-hover"
           >
             Coba lagi
@@ -294,6 +335,22 @@ export default function RekomendasiPage() {
           })}
         </div>
       )}
+
+      {/* Mode Diagnostik (aktif dengan tombol di bawah atau /user/rekomendasi?debug=1)
+          Panel kiri: tahapan pembentukan dokumen profil + lowongan.
+          Panel kanan: perhitungan TF-IDF & cosine per lowongan. Auto-refresh tiap 30 detik. */}
+      {showDebug && <MatchDebugPanel />}
+
+      <div className="mt-6 flex justify-end">
+        <button
+          type="button"
+          onClick={() => setDebugOpen((o) => !o)}
+          className="rounded-md border border-slate-300 bg-white px-3 py-1.5 text-[11px] font-medium text-slate-500 hover:bg-slate-50 hover:text-slate-700 transition-colors"
+          aria-expanded={showDebug}
+        >
+          {showDebug ? 'Sembunyikan Mode Diagnostik' : 'Mode Diagnostik'}
+        </button>
+      </div>
 
       {/* Detail Modal */}
       <Modal
