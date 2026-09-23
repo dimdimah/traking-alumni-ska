@@ -46,7 +46,6 @@ export default function ProfilePage() {
   // Profile form
   const [fullName, setFullName] = useState('')
   const [nim, setNim] = useState('')
-  const [tanggalLahir, setTanggalLahir] = useState('')
   const [phone, setPhone] = useState('')
   const [bio, setBio] = useState('')
 
@@ -57,7 +56,6 @@ export default function ProfilePage() {
   const [certifications, setCertifications] = useState('')
   const [jobInterests, setJobInterests] = useState('')
   const [preferredLocation, setPreferredLocation] = useState('')
-  const [expectedSalary, setExpectedSalary] = useState('')
   const [preferredType, setPreferredType] = useState('')
   const [graduationYear, setGraduationYear] = useState('')
 
@@ -69,6 +67,7 @@ export default function ProfilePage() {
 
   // CV dialog
   const [cvDialogOpen, setCvDialogOpen] = useState(false)
+  const [hasCompletedTracerStudy, setHasCompletedTracerStudy] = useState(false)
 
   // ── Track Record State ──────────────────────────────
   const [records, setRecords] = useState<TrackRecord[]>([])
@@ -84,8 +83,9 @@ export default function ProfilePage() {
 
   const loadRecords = useCallback(async () => {
     try {
-      const { trackRecords } = await getProfileInitialData()
+      const { trackRecords, hasCompletedTracerStudy: ts } = await getProfileInitialData()
       setRecords(trackRecords)
+      setHasCompletedTracerStudy(ts)
     } catch {}
   }, [])
 
@@ -95,7 +95,6 @@ export default function ProfilePage() {
     setCompleteness(getProfileCompletenessDetails(profileData, trackData))
     setFullName(profileData.full_name || '')
     setNim(profileData.nim || '')
-    setTanggalLahir(profileData.tanggal_lahir || '')
     setPhone(profileData.phone || '')
     setBio(profileData.bio || '')
     setSkills(Array.isArray(profileData.skills) ? profileData.skills.join(', ') : '')
@@ -104,7 +103,6 @@ export default function ProfilePage() {
     setCertifications(Array.isArray(profileData.certifications) ? profileData.certifications.join('\n') : '')
     setJobInterests(Array.isArray(profileData.job_interests) ? profileData.job_interests.join(', ') : '')
     setPreferredLocation(profileData.preferred_location || '')
-    setExpectedSalary(profileData.expected_salary || '')
     setPreferredType(profileData.preferred_type || '')
     setGraduationYear(profileData.graduation_year?.toString() || '')
   }
@@ -113,9 +111,10 @@ export default function ProfilePage() {
     async function load() {
       // Single BE RTT: 1× auth + paralel profiles + track_records; cache tetap dipakai untuk instant render
       try {
-        const { profile: p, trackRecords } = await getProfileInitialData()
+        const { profile: p, trackRecords, hasCompletedTracerStudy: ts } = await getProfileInitialData()
         if (!p) { router.push('/login'); return }
         applyProfile(p, trackRecords)
+        setHasCompletedTracerStudy(ts)
         setCachedProfile(p)
       } catch {
         router.push('/login')
@@ -177,16 +176,13 @@ export default function ProfilePage() {
       fd.append('phone', phone)
       fd.append('bio', bio)
       fd.append('nim', nim)
-      fd.append('tanggal_lahir', tanggalLahir)
       fd.append('skills', skills)
       fd.append('location', location)
       fd.append('program_studi', programStudi)
       fd.append('certifications', certifications)
       fd.append('job_interests', jobInterests)
       fd.append('preferred_location', preferredLocation)
-      fd.append('expected_salary', expectedSalary)
       fd.append('preferred_type', preferredType)
-      fd.append('graduation_year', graduationYear)
       await updateProfile(fd)
       const updatedProfile = {
         ...profile,
@@ -194,16 +190,13 @@ export default function ProfilePage() {
         phone,
         bio,
         nim,
-        tanggal_lahir: tanggalLahir || null,
         skills: skills.split(/[,;]/).map(s => s.trim()).filter(Boolean),
         location: location || null,
         program_studi: programStudi || null,
         certifications: certifications.split(/\r?\n/).map(s => s.trim()).filter(Boolean),
         job_interests: jobInterests.split(/[,;]/).map(s => s.trim()).filter(Boolean),
         preferred_location: preferredLocation || null,
-        expected_salary: expectedSalary || null,
         preferred_type: preferredType || null,
-        graduation_year: graduationYear ? parseInt(graduationYear, 10) : null,
       } as Profile
       setProfile(updatedProfile)
       setCachedProfile(updatedProfile)
@@ -306,384 +299,326 @@ export default function ProfilePage() {
         </div>
       )}
 
-      {/* Two-column layout */}
-      <div className="grid gap-6 lg:grid-cols-2">
-        {/* Left — Edit Profile */}
-        <div className="animate-fade-in-up" style={{ animationDelay: '0.05s' }}>
-          <div className="rounded-lg border border-slate-200 bg-white p-6 shadow-sm">
-            <div className="mb-6">
-              <p className="text-[11px] font-mono uppercase tracking-wider text-slate-500">Data Diri</p>
-              <p className="mt-1 text-sm text-slate-600">Informasi akun dan kontak alumni</p>
+      {/* ── Card 1 · Profile Preview ──────────────────────── */}
+      <section className="animate-fade-in-up rounded-lg border border-slate-200 bg-white p-6 shadow-sm">
+        <div className="flex flex-col gap-5 sm:flex-row sm:items-center">
+          <div className="flex h-16 w-16 items-center justify-center rounded-lg bg-slate-100 border border-slate-200">
+            <span className="text-2xl font-semibold text-slate-900 font-mono">
+              {(fullName || profile?.email || '?').charAt(0).toUpperCase()}
+            </span>
+          </div>
+          <div className="min-w-0 flex-1">
+            <p className="text-lg font-semibold text-slate-900 truncate">{fullName || 'User'}</p>
+            <p className="text-sm text-slate-600 truncate">{profile?.email}</p>
+            <span className={`mt-2 inline-flex items-center gap-1.5 rounded-md px-3 py-1 text-[11px] font-medium font-mono tracking-wider uppercase ${
+              profile?.role === 'super_user' ? 'bg-amikom-purple text-amikom-jonquil-warm' : 'bg-slate-100 text-slate-600 border border-slate-200'
+            }`}>
+              <span className={`inline-block h-1.5 w-1.5 rounded-full ${profile?.role === 'super_user' ? 'bg-amikom-jonquil-warm' : 'bg-slate-500'}`} />
+              {profile?.role === 'super_user' ? 'Super User' : 'Alumni'}
+            </span>
+          </div>
+        </div>
+
+        <div className="mt-6 grid grid-cols-2 gap-x-6 gap-y-4 md:grid-cols-3">
+          {nim && (
+            <div>
+              <p className="text-[10px] font-mono uppercase tracking-wider text-slate-500">NIM</p>
+              <p className="mt-0.5 text-sm text-slate-900">{nim}</p>
+            </div>
+          )}
+          {programStudi && (
+            <div>
+              <p className="text-[10px] font-mono uppercase tracking-wider text-slate-500">Program Studi</p>
+              <p className="mt-0.5 text-sm text-slate-900">{programStudi}</p>
+            </div>
+          )}
+          {graduationYear && (
+            <div>
+              <p className="text-[10px] font-mono uppercase tracking-wider text-slate-500">Tahun Lulus</p>
+              <p className="mt-0.5 text-sm text-slate-900">{graduationYear}</p>
+            </div>
+          )}
+          {phone && (
+            <div>
+              <p className="text-[10px] font-mono uppercase tracking-wider text-slate-500">Telepon</p>
+              <p className="mt-0.5 text-sm text-slate-900">{phone}</p>
+            </div>
+          )}
+          {preferredLocation && (
+            <div>
+              <p className="text-[10px] font-mono uppercase tracking-wider text-slate-500">Preferensi Lokasi</p>
+              <p className="mt-0.5 text-sm text-slate-600">{preferredLocation}</p>
+            </div>
+          )}
+          {preferredType && (
+            <div>
+              <p className="text-[10px] font-mono uppercase tracking-wider text-slate-500">Tipe Pekerjaan</p>
+              <p className="mt-0.5 text-sm text-slate-600">{preferredType}</p>
+            </div>
+          )}
+          <div>
+            <p className="text-[10px] font-mono uppercase tracking-wider text-slate-500">Bergabung Sejak</p>
+            <p className="mt-0.5 text-sm text-slate-900">
+              {profile?.created_at
+                ? new Date(profile.created_at).toLocaleDateString('id-ID', { day: 'numeric', month: 'long', year: 'numeric' })
+                : '—'}
+            </p>
+          </div>
+        </div>
+
+        {bio && (
+          <div className="mt-5 rounded-md bg-slate-50 border border-slate-200 px-4 py-3">
+            <p className="text-[10px] font-mono uppercase tracking-wider text-slate-500">Bio</p>
+            <p className="mt-1 text-sm text-slate-600 leading-relaxed">{bio}</p>
+          </div>
+        )}
+      </section>
+
+      {/* ── Card 2 · Data Diri ───────────────────────────── */}
+      <section className="animate-fade-in-up rounded-lg border border-slate-200 bg-white p-6 shadow-sm" style={{ animationDelay: '0.05s' }}>
+        <form onSubmit={handleProfileSubmit}>
+          <div className="mb-6">
+            <p className="text-[11px] font-mono uppercase tracking-wider text-slate-500">Data Diri</p>
+            <p className="mt-1 text-xs text-slate-500">Informasi identitas dan kontak alumni</p>
+          </div>
+
+          <div className="grid gap-5 sm:grid-cols-2">
+            <div className="space-y-2">
+              <label className="block text-xs font-medium text-slate-600 font-mono uppercase tracking-wider">Nama Lengkap</label>
+              <input type="text" required value={fullName} onChange={(e) => setFullName(e.target.value)}
+                placeholder="Masukkan nama lengkap"
+                className="w-full rounded-md border border-slate-200 bg-white px-3.5 py-2.5 text-sm text-slate-900 placeholder-slate-400 outline-none transition-all focus:border-amikom-purple focus:ring-2 focus:ring-amikom-purple/20" />
             </div>
 
-            <form onSubmit={handleProfileSubmit} className="space-y-5">
-              <div className="space-y-2">
-                <label className="block text-xs font-medium text-slate-600 font-mono uppercase tracking-wider">Nama Lengkap</label>
-                <input type="text" required value={fullName} onChange={(e) => setFullName(e.target.value)}
-                  placeholder="Masukkan nama lengkap"
-                  className="w-full rounded-md border border-slate-200 bg-white px-3.5 py-2.5 text-sm text-slate-900 placeholder-slate-400 outline-none transition-all focus:border-amikom-purple focus:ring-2 focus:ring-amikom-purple/20" />
+            <div className="space-y-2">
+              <label className="block text-xs font-medium text-slate-600 font-mono uppercase tracking-wider">NIM</label>
+              <input type="text" value={nim} onChange={(e) => setNim(e.target.value)}
+                placeholder="Nomor Induk Mahasiswa"
+                className="w-full rounded-md border border-slate-200 bg-white px-3.5 py-2.5 text-sm text-slate-900 placeholder-slate-400 outline-none transition-all focus:border-amikom-purple focus:ring-2 focus:ring-amikom-purple/20" />
+            </div>
+
+            <div className="space-y-2">
+              <label className="block text-xs font-medium text-slate-600 font-mono uppercase tracking-wider">Email</label>
+              <input type="email" value={profile?.email || ''} readOnly
+                className="w-full rounded-md border border-slate-200 bg-slate-100 px-3.5 py-2.5 text-sm text-slate-500 outline-none cursor-not-allowed" />
+              <p className="text-xs text-slate-500">Email tidak dapat diubah</p>
+            </div>
+
+            <div className="space-y-2">
+              <label className="block text-xs font-medium text-slate-600 font-mono uppercase tracking-wider">No. Telepon</label>
+              <input type="tel" value={phone} onChange={(e) => setPhone(e.target.value)}
+                placeholder="+62 812 3456 7890"
+                className="w-full rounded-md border border-slate-200 bg-white px-3.5 py-2.5 text-sm text-slate-900 placeholder-slate-400 outline-none transition-all focus:border-amikom-purple focus:ring-2 focus:ring-amikom-purple/20" />
+            </div>
+
+            <div className="space-y-2 sm:col-span-2">
+              <label className="block text-xs font-medium text-slate-600 font-mono uppercase tracking-wider">Lokasi Domisili</label>
+              <Select value={location} onValueChange={setLocation}>
+                <SelectTrigger>
+                  <SelectValue placeholder="Pilih lokasi domisili..." />
+                </SelectTrigger>
+                <SelectContent>
+                  <SelectGroup>
+                    <SelectItem value="Solo Raya">Solo Raya</SelectItem>
+                    <SelectItem value="STMIK AMIKOM Surakarta">STMIK AMIKOM Surakarta</SelectItem>
+                    <SelectItem value="Semarang">Semarang</SelectItem>
+                    <SelectItem value="Jakarta">Jakarta</SelectItem>
+                    <SelectItem value="Bandung">Bandung</SelectItem>
+                    <SelectItem value="Surabaya">Surabaya</SelectItem>
+                    <SelectItem value="Malang">Malang</SelectItem>
+                    <SelectItem value="Bali">Bali</SelectItem>
+                    <SelectItem value="Luar Jawa">Luar Jawa</SelectItem>
+                    <SelectItem value="Remote / WFH">Remote / WFH</SelectItem>
+                  </SelectGroup>
+                </SelectContent>
+              </Select>
+            </div>
+
+            <div className="space-y-2 sm:col-span-2">
+              <label className="block text-xs font-medium text-slate-600 font-mono uppercase tracking-wider">Bio</label>
+              <textarea value={bio} onChange={(e) => setBio(e.target.value)} rows={3}
+                placeholder="Tulis bio singkat..."
+                className="w-full rounded-md border border-slate-200 bg-white px-3.5 py-2.5 text-sm text-slate-900 placeholder-slate-400 outline-none transition-all focus:border-amikom-purple focus:ring-2 focus:ring-amikom-purple/20 resize-none" />
+            </div>
+
+            <div className="space-y-2">
+              <label className="block text-xs font-medium text-slate-600 font-mono uppercase tracking-wider">Tahun Lulus</label>
+              <input type="number" value={graduationYear} readOnly
+                placeholder={graduationYear ? undefined : 'Belum diatur'}
+                className="w-full rounded-md border border-slate-200 bg-slate-100 px-3.5 py-2.5 text-sm text-slate-500 outline-none cursor-not-allowed" />
+              <p className="text-xs text-slate-500">Tahun lulus ditetapkan oleh admin.</p>
+            </div>
+          </div>
+
+          <div className="mt-6 flex justify-end">
+            <button type="submit" disabled={saving}
+              className="rounded-md bg-amikom-purple px-5 py-2.5 text-sm font-medium text-white transition-all active:scale-[0.98] hover:bg-amikom-purple-hover hover:text-amikom-jonquil-warm disabled:opacity-50 flex items-center justify-center gap-2">
+              {saving ? (
+                <><span className="inline-block h-4 w-4 animate-spin rounded-full border-2 border-white/30 border-t-white" /> Menyimpan...</>
+              ) : 'Simpan Data Diri'}
+            </button>
+          </div>
+        </form>
+      </section>
+
+      {/* ── Card 3 · Keamanan Akun ───────────────────────── */}
+      <section className="animate-fade-in-up rounded-lg border border-slate-200 bg-white p-6 shadow-sm" style={{ animationDelay: '0.1s' }}>
+        <form onSubmit={handlePasswordSubmit}>
+          <div className="mb-6">
+            <p className="text-[11px] font-mono uppercase tracking-wider text-slate-500">Keamanan Akun</p>
+            <p className="mt-1 text-xs text-slate-500">Ganti password untuk memperbarui keamanan akun Anda</p>
+          </div>
+          <div className="space-y-4 lg:max-w-xl">
+            <div className="space-y-2">
+              <label className="block text-xs font-medium text-slate-600 font-mono uppercase tracking-wider">Password Saat Ini</label>
+              <input type="password" required value={currentPassword} onChange={(e) => setCurrentPassword(e.target.value)}
+                placeholder="••••••••"
+                className="w-full rounded-md border border-slate-200 bg-white px-3.5 py-2.5 text-sm text-slate-900 placeholder-slate-400 outline-none transition-all focus:border-amikom-purple focus:ring-2 focus:ring-amikom-purple/20" />
+            </div>
+            <div className="space-y-2">
+              <label className="block text-xs font-medium text-slate-600 font-mono uppercase tracking-wider">Password Baru</label>
+              <input type="password" required value={newPassword} onChange={(e) => setNewPassword(e.target.value)}
+                placeholder="Minimal 6 karakter"
+                className="w-full rounded-md border border-slate-200 bg-white px-3.5 py-2.5 text-sm text-slate-900 placeholder-slate-400 outline-none transition-all focus:border-amikom-purple focus:ring-2 focus:ring-amikom-purple/20" />
+            </div>
+            <div className="space-y-2">
+              <label className="block text-xs font-medium text-slate-600 font-mono uppercase tracking-wider">Konfirmasi Password Baru</label>
+              <input type="password" required value={confirmPassword} onChange={(e) => setConfirmPassword(e.target.value)}
+                placeholder="Ulangi password baru"
+                className="w-full rounded-md border border-slate-200 bg-white px-3.5 py-2.5 text-sm text-slate-900 placeholder-slate-400 outline-none transition-all focus:border-amikom-purple focus:ring-2 focus:ring-amikom-purple/20" />
+            </div>
+          </div>
+          <div className="mt-6 flex justify-end">
+            <button type="submit" disabled={changingPassword}
+              className="rounded-md bg-amikom-purple px-5 py-2.5 text-sm font-medium text-white transition-all active:scale-[0.98] hover:bg-amikom-purple-hover hover:text-amikom-jonquil-warm disabled:opacity-50 flex items-center justify-center gap-2">
+              {changingPassword ? (
+                <><span className="inline-block h-4 w-4 animate-spin rounded-full border-2 border-white/30 border-t-white" /> Mengganti...</>
+              ) : 'Ganti Password'}
+            </button>
+          </div>
+        </form>
+      </section>
+
+        {/* ── Card 4 · Atribut Rekomendasi ─────────────────── */}
+        <form onSubmit={handleProfileSubmit}>
+        <section className="animate-fade-in-up rounded-lg border border-slate-200 bg-white p-6 shadow-sm" style={{ animationDelay: '0.15s' }}>
+          <div className="mb-6">
+            <p className="text-[11px] font-mono uppercase tracking-wider text-amikom-purple">Atribut Rekomendasi</p>
+            <p className="mt-1 text-xs text-slate-500">Atribut ini dipakai untuk menghitung tingkat kecocokan dengan lowongan kerja.</p>
+          </div>
+
+          <div className="space-y-5">
+            <div className="space-y-2">
+              <label className="block text-xs font-medium text-slate-600 font-mono uppercase tracking-wider">Program Studi</label>
+              <select
+                value={programStudi}
+                onChange={(e) => setProgramStudi(e.target.value)}
+                className="w-full rounded-md border border-slate-200 bg-white px-3.5 py-2.5 text-sm text-slate-900 outline-none transition-all focus:border-amikom-purple focus:ring-2 focus:ring-amikom-purple/20"
+              >
+                <option value="">Pilih program studi...</option>
+                {PROGRAM_STUDI.map((program) => (
+                  <option key={program} value={program}>{program}</option>
+                ))}
+              </select>
+            </div>
+
+            <div className="space-y-2">
+              <label className="block text-xs font-medium text-slate-600 font-mono uppercase tracking-wider">Skill / Keahlian</label>
+              <SkillSelector value={skills} onChange={setSkills} />
+            </div>
+
+            <div className="space-y-2">
+              <label className="block text-xs font-medium text-slate-600 font-mono uppercase tracking-wider">Sertifikasi Kompetensi</label>
+              <CertificationInput value={certifications} onChange={setCertifications} />
+            </div>
+
+            <div className="space-y-2">
+              <label className="block text-xs font-medium text-slate-600 font-mono uppercase tracking-wider">Bidang / Posisi Pekerjaan yang Diminati</label>
+              <TagInput value={jobInterests} onChange={setJobInterests} placeholder="Contoh: Backend Developer" />
+              <div className="flex flex-wrap gap-1.5">
+                {JOB_INTERESTS.map((interest) => (
+                  <button
+                    key={interest}
+                    type="button"
+                    onClick={() => {
+                      const selected = jobInterests.split(/[,;]/).map(item => item.trim()).filter(Boolean)
+                      if (!selected.some(item => item.toLowerCase() === interest.toLowerCase())) {
+                        setJobInterests([...selected, interest].join(', '))
+                      }
+                    }}
+                    className="rounded-full border border-slate-200 px-2.5 py-1 text-[10px] text-slate-600 hover:border-amikom-purple hover:text-amikom-purple"
+                  >
+                    {interest}
+                  </button>
+                ))}
+              </div>
               </div>
 
+            <div className="grid gap-5 sm:grid-cols-2">
               <div className="space-y-2">
-                <label className="block text-xs font-medium text-slate-600 font-mono uppercase tracking-wider">NIM</label>
-                <input type="text" value={nim} onChange={(e) => setNim(e.target.value)}
-                  placeholder="Nomor Induk Mahasiswa"
-                  className="w-full rounded-md border border-slate-200 bg-white px-3.5 py-2.5 text-sm text-slate-900 placeholder-slate-400 outline-none transition-all focus:border-amikom-purple focus:ring-2 focus:ring-amikom-purple/20" />
-              </div>
-
-              <div className="space-y-2">
-                <label className="block text-xs font-medium text-slate-600 font-mono uppercase tracking-wider">Tanggal Lahir</label>
-                <input type="date" value={tanggalLahir} onChange={(e) => setTanggalLahir(e.target.value)}
-                  className="w-full rounded-md border border-amikom-hairline bg-amikom-canvas px-3.5 py-2.5 text-sm text-amikom-ink outline-none transition-all focus:border-amikom-purple focus:ring-2 focus:ring-amikom-purple/20" />
-              </div>
-
-              <div className="space-y-2">
-                <label className="block text-xs font-medium text-slate-600 font-mono uppercase tracking-wider">Email</label>
-                <input type="email" value={profile?.email || ''} readOnly
-                  className="w-full rounded-md border border-slate-200 bg-slate-100 px-3.5 py-2.5 text-sm text-slate-500 outline-none cursor-not-allowed" />
-                <p className="text-xs text-slate-500">Email tidak dapat diubah</p>
-              </div>
-
-              <div className="space-y-2">
-                <label className="block text-xs font-medium text-slate-600 font-mono uppercase tracking-wider">No. Telepon</label>
-                <input type="tel" value={phone} onChange={(e) => setPhone(e.target.value)}
-                  placeholder="+62 812 3456 7890"
-                  className="w-full rounded-md border border-slate-200 bg-white px-3.5 py-2.5 text-sm text-slate-900 placeholder-slate-400 outline-none transition-all focus:border-amikom-purple focus:ring-2 focus:ring-amikom-purple/20" />
-              </div>
-
-              <div className="space-y-2">
-                <label className="block text-xs font-medium text-slate-600 font-mono uppercase tracking-wider">Lokasi Domisili</label>
-                <Select value={location} onValueChange={setLocation}>
+                <label className="block text-xs font-medium text-slate-600 font-mono uppercase tracking-wider">Preferensi Lokasi Kerja</label>
+                <Select value={preferredLocation} onValueChange={setPreferredLocation}>
                   <SelectTrigger>
-                    <SelectValue placeholder="Pilih lokasi domisili..." />
+                    <SelectValue placeholder="Pilih preferensi lokasi..." />
                   </SelectTrigger>
                   <SelectContent>
                     <SelectGroup>
-                      <SelectItem value="Solo Raya">Solo Raya</SelectItem>
-                      <SelectItem value="STMIK AMIKOM Surakarta">STMIK AMIKOM Surakarta</SelectItem>
-                      <SelectItem value="Semarang">Semarang</SelectItem>
-                      <SelectItem value="Jakarta">Jakarta</SelectItem>
-                      <SelectItem value="Bandung">Bandung</SelectItem>
-                      <SelectItem value="Surabaya">Surabaya</SelectItem>
-                      <SelectItem value="Malang">Malang</SelectItem>
-                      <SelectItem value="Bali">Bali</SelectItem>
-                      <SelectItem value="Luar Jawa">Luar Jawa</SelectItem>
-                      <SelectItem value="Remote / WFH">Remote / WFH</SelectItem>
+                      {PREFERRED_LOCATIONS.map((preferred) => (
+                        <SelectItem key={preferred} value={preferred}>{preferred}</SelectItem>
+                      ))}
                     </SelectGroup>
                   </SelectContent>
                 </Select>
               </div>
 
               <div className="space-y-2">
-                <label className="block text-xs font-medium text-slate-600 font-mono uppercase tracking-wider">Bio</label>
-                <textarea value={bio} onChange={(e) => setBio(e.target.value)} rows={3}
-                  placeholder="Tulis bio singkat..."
-                  className="w-full rounded-md border border-slate-200 bg-white px-3.5 py-2.5 text-sm text-slate-900 placeholder-slate-400 outline-none transition-all focus:border-amikom-purple focus:ring-2 focus:ring-amikom-purple/20 resize-none" />
-              </div>
-
-              <div className="space-y-2">
-                <label className="block text-xs font-medium text-slate-600 font-mono uppercase tracking-wider">Tahun Lulus</label>
-                <input type="number" value={graduationYear} onChange={(e) => setGraduationYear(e.target.value)}
-                  placeholder="Contoh: 2024" min={1990} max={2030}
-                  className="w-full rounded-md border border-slate-200 bg-white px-3.5 py-2.5 text-sm text-slate-900 placeholder-slate-400 outline-none transition-all focus:border-amikom-purple focus:ring-2 focus:ring-amikom-purple/20" />
-              </div>
-
-              <div className="pt-4 border-t border-slate-100">
-                <div className="mb-5">
-                  <p className="text-[11px] font-mono uppercase tracking-wider text-amikom-purple">
-                    Profil Rekomendasi Pekerjaan
-                  </p>
-                  <p className="mt-1.5 text-xs text-slate-500">
-                    Data berikut digunakan untuk membantu sistem mencocokkan profil Anda dengan lowongan kerja menggunakan Content-Based Filtering.
-                  </p>
-                </div>
-
-                <div className="space-y-4">
-                  <div className="space-y-2">
-                    <label className="block text-xs font-medium text-slate-600 font-mono uppercase tracking-wider">Program Studi</label>
-                    <select
-                      value={programStudi}
-                      onChange={(e) => setProgramStudi(e.target.value)}
-                      className="w-full rounded-md border border-slate-200 bg-white px-3.5 py-2.5 text-sm text-slate-900 outline-none transition-all focus:border-amikom-purple focus:ring-2 focus:ring-amikom-purple/20"
-                    >
-                      <option value="">Pilih program studi...</option>
-                      {PROGRAM_STUDI.map((program) => (
-                        <option key={program} value={program}>{program}</option>
-                      ))}
-                    </select>
-                  </div>
-
-                  <div className="space-y-2">
-                    <label className="block text-xs font-medium text-slate-600 font-mono uppercase tracking-wider">Skill / Keahlian</label>
-                    <SkillSelector value={skills} onChange={setSkills} />
-                  </div>
-
-                  <div className="space-y-2">
-                    <label className="block text-xs font-medium text-slate-600 font-mono uppercase tracking-wider">Pengalaman Kerja</label>
-                    <p className="text-xs text-slate-500">
-                      Tambahkan posisi dan deskripsi pekerjaan pada bagian Riwayat Kerja di bawah. Posisi dan deskripsi digunakan dalam dokumen rekomendasi.
-                    </p>
-                    {records.length > 0 && (
-                      <p className="text-xs text-amikom-purple">{records.length} riwayat kerja tersimpan</p>
-                    )}
-                  </div>
-
-                  <div className="space-y-2">
-                    <label className="block text-xs font-medium text-slate-600 font-mono uppercase tracking-wider">Sertifikasi Kompetensi</label>
-                    <CertificationInput value={certifications} onChange={setCertifications} />
-                  </div>
-
-                  <div className="space-y-2">
-                    <label className="block text-xs font-medium text-slate-600 font-mono uppercase tracking-wider">Bidang / Posisi Pekerjaan yang Diminati</label>
-                    <TagInput value={jobInterests} onChange={setJobInterests} placeholder="Contoh: Backend Developer" />
-                    <div className="flex flex-wrap gap-1.5">
-                      {JOB_INTERESTS.map((interest) => (
-                        <button
-                          key={interest}
-                          type="button"
-                          onClick={() => {
-                            const selected = jobInterests.split(/[,;]/).map(item => item.trim()).filter(Boolean)
-                            if (!selected.some(item => item.toLowerCase() === interest.toLowerCase())) {
-                              setJobInterests([...selected, interest].join(', '))
-                            }
-                          }}
-                          className="rounded-full border border-slate-200 px-2.5 py-1 text-[10px] text-slate-600 hover:border-amikom-purple hover:text-amikom-purple"
-                        >
-                          {interest}
-                        </button>
-                      ))}
-                    </div>
-                  </div>
-
-                  <div className="space-y-2">
-                    <label className="block text-xs font-medium text-slate-600 font-mono uppercase tracking-wider">Preferensi Lokasi Kerja</label>
-                    <Select value={preferredLocation} onValueChange={setPreferredLocation}>
-                      <SelectTrigger>
-                        <SelectValue placeholder="Pilih preferensi lokasi..." />
-                      </SelectTrigger>
-                      <SelectContent>
-                        <SelectGroup>
-                          {PREFERRED_LOCATIONS.map((preferred) => (
-                            <SelectItem key={preferred} value={preferred}>{preferred}</SelectItem>
-                          ))}
-                        </SelectGroup>
-                      </SelectContent>
-                    </Select>
-                  </div>
-
-                  <div className="grid gap-4 sm:grid-cols-2">
-                    <div className="space-y-2">
-                      <label className="block text-xs font-medium text-slate-600 font-mono uppercase tracking-wider">Ekspektasi Gaji</label>
-                      <Select value={expectedSalary} onValueChange={setExpectedSalary}>
-                        <SelectTrigger>
-                          <SelectValue placeholder="Pilih range gaji..." />
-                        </SelectTrigger>
-                        <SelectContent>
-                          <SelectGroup>
-                            <SelectItem value="1-3 juta">&lt; 3 juta</SelectItem>
-                            <SelectItem value="3-5 juta">3 - 5 juta</SelectItem>
-                            <SelectItem value="5-10 juta">5 - 10 juta</SelectItem>
-                            <SelectItem value="10-20 juta">10 - 20 juta</SelectItem>
-                            <SelectItem value="20-50 juta">&gt; 20 juta</SelectItem>
-                          </SelectGroup>
-                        </SelectContent>
-                      </Select>
-                      <p className="text-[10px] text-slate-400">Disimpan di profil, tetapi tidak digunakan untuk menghitung similarity.</p>
-                    </div>
-                    <div className="space-y-2">
-                      <label className="block text-xs font-medium text-slate-600 font-mono uppercase tracking-wider">Tipe Pekerjaan yang Diinginkan</label>
-                      <select value={preferredType} onChange={(e) => setPreferredType(e.target.value)}
-                        className="w-full rounded-md border border-slate-200 bg-white px-3.5 py-2.5 text-sm text-slate-900 outline-none transition-all focus:border-amikom-purple focus:ring-2 focus:ring-amikom-purple/20">
-                        <option value="">Pilih tipe...</option>
-                        {JOB_TYPES.map((type) => <option key={type} value={type}>{type}</option>)}
-                      </select>
-                    </div>
-                  </div>
-                </div>
-              </div>
-
-              <button type="submit" disabled={saving}
-                className="w-full rounded-md bg-amikom-purple px-4 py-2.5 text-sm font-medium text-white transition-all active:scale-[0.98] hover:bg-amikom-purple-hover hover:text-amikom-jonquil-warm disabled:opacity-50 flex items-center justify-center gap-2">
-                {saving ? (
-                  <><span className="inline-block h-4 w-4 animate-spin rounded-full border-2 border-white/30 border-t-white" /> Menyimpan...</>
-                ) : 'Simpan Perubahan'}
-              </button>
-            </form>
-          </div>
-
-          {/* Change Password */}
-          <div className="mt-6 rounded-lg border border-slate-200 bg-white p-6 shadow-sm">
-            <p className="text-[11px] font-mono uppercase tracking-wider text-slate-500 mb-6">Ganti Password</p>
-            <form onSubmit={handlePasswordSubmit} className="space-y-4">
-              <div className="space-y-2">
-                <label className="block text-xs font-medium text-slate-600 font-mono uppercase tracking-wider">Password Saat Ini</label>
-                <input type="password" required value={currentPassword} onChange={(e) => setCurrentPassword(e.target.value)}
-                  placeholder="••••••••"
-                  className="w-full rounded-md border border-slate-200 bg-white px-3.5 py-2.5 text-sm text-slate-900 placeholder-slate-400 outline-none transition-all focus:border-amikom-purple focus:ring-2 focus:ring-amikom-purple/20" />
-              </div>
-              <div className="space-y-2">
-                <label className="block text-xs font-medium text-slate-600 font-mono uppercase tracking-wider">Password Baru</label>
-                <input type="password" required value={newPassword} onChange={(e) => setNewPassword(e.target.value)}
-                  placeholder="Minimal 6 karakter"
-                  className="w-full rounded-md border border-slate-200 bg-white px-3.5 py-2.5 text-sm text-slate-900 placeholder-slate-400 outline-none transition-all focus:border-amikom-purple focus:ring-2 focus:ring-amikom-purple/20" />
-              </div>
-              <div className="space-y-2">
-                <label className="block text-xs font-medium text-slate-600 font-mono uppercase tracking-wider">Konfirmasi Password Baru</label>
-                <input type="password" required value={confirmPassword} onChange={(e) => setConfirmPassword(e.target.value)}
-                  placeholder="Ulangi password baru"
-                  className="w-full rounded-md border border-slate-200 bg-white px-3.5 py-2.5 text-sm text-slate-900 placeholder-slate-400 outline-none transition-all focus:border-amikom-purple focus:ring-2 focus:ring-amikom-purple/20" />
-              </div>
-              <button type="submit" disabled={changingPassword}
-                className="w-full rounded-md bg-amikom-purple px-4 py-2.5 text-sm font-medium text-white transition-all active:scale-[0.98] hover:bg-amikom-purple-hover hover:text-amikom-jonquil-warm disabled:opacity-50 flex items-center justify-center gap-2">
-                {changingPassword ? (
-                  <><span className="inline-block h-4 w-4 animate-spin rounded-full border-2 border-white/30 border-t-white" /> Mengganti...</>
-                ) : 'Ganti Password'}
-              </button>
-            </form>
-          </div>
-        </div>
-
-        {/* Right — Profile Preview */}
-        <div className="animate-fade-in-up" style={{ animationDelay: '0.1s' }}>
-          <div className="rounded-lg border border-slate-200 bg-white p-6 shadow-sm sticky top-20">
-            <p className="text-[11px] font-mono uppercase tracking-wider text-slate-500 mb-6">Profile Preview</p>
-            <div className="flex items-center gap-5">
-              <div className="flex h-16 w-16 items-center justify-center rounded-lg bg-slate-100 border border-slate-200">
-                <span className="text-2xl font-semibold text-slate-900 font-mono">
-                  {(fullName || profile?.email || '?').charAt(0).toUpperCase()}
-                </span>
-              </div>
-              <div>
-                <p className="text-lg font-semibold text-slate-900">{fullName || 'User'}</p>
-                <p className="text-sm text-slate-600">{profile?.email}</p>
-                <span className={`mt-2 inline-flex items-center gap-1.5 rounded-md px-3 py-1 text-[11px] font-medium font-mono tracking-wider uppercase ${
-                  profile?.role === 'super_user' ? 'bg-amikom-purple text-amikom-jonquil-warm' : 'bg-slate-100 text-slate-600 border border-slate-200'
-                }`}>
-                  <span className={`inline-block h-1.5 w-1.5 rounded-full ${profile?.role === 'super_user' ? 'bg-amikom-jonquil-warm' : 'bg-slate-500'}`} />
-                  {profile?.role === 'super_user' ? 'Super User' : 'Alumni'}
-                </span>
-              </div>
-            </div>
-
-            <div className="mt-6 space-y-4">
-              {nim && (
-                <div>
-                  <p className="text-[10px] font-mono uppercase tracking-wider text-slate-500">NIM</p>
-                  <p className="mt-0.5 text-sm text-slate-900">{nim}</p>
-                </div>
-              )}
-              {programStudi && (
-                <div>
-                  <p className="text-[10px] font-mono uppercase tracking-wider text-slate-500">Program Studi</p>
-                  <p className="mt-0.5 text-sm text-slate-900">{programStudi}</p>
-                </div>
-              )}
-              {skills && (
-                <div>
-                  <p className="text-[10px] font-mono uppercase tracking-wider text-slate-500">Skill / Keahlian</p>
-                  <p className="mt-0.5 text-sm text-slate-600">{skills}</p>
-                </div>
-              )}
-              {certifications && (
-                <div>
-                  <p className="text-[10px] font-mono uppercase tracking-wider text-slate-500">Sertifikasi Kompetensi</p>
-                  <p className="mt-0.5 text-sm text-slate-600 whitespace-pre-line">{certifications}</p>
-                </div>
-              )}
-              {jobInterests && (
-                <div>
-                  <p className="text-[10px] font-mono uppercase tracking-wider text-slate-500">Bidang / Posisi yang Diminati</p>
-                  <p className="mt-0.5 text-sm text-slate-600">{jobInterests}</p>
-                </div>
-              )}
-              {(preferredLocation || preferredType) && (
-                <div className="grid grid-cols-2 gap-3">
-                  {preferredLocation && (
-                    <div>
-                      <p className="text-[10px] font-mono uppercase tracking-wider text-slate-500">Preferensi Lokasi</p>
-                      <p className="mt-0.5 text-sm text-slate-600">{preferredLocation}</p>
-                    </div>
-                  )}
-                  {preferredType && (
-                    <div>
-                      <p className="text-[10px] font-mono uppercase tracking-wider text-slate-500">Tipe Pekerjaan</p>
-                      <p className="mt-0.5 text-sm text-slate-600">{preferredType}</p>
-                    </div>
-                  )}
-                </div>
-              )}
-              {graduationYear && (
-                <div>
-                  <p className="text-[10px] font-mono uppercase tracking-wider text-slate-500">Tahun Lulus</p>
-                  <p className="mt-0.5 text-sm text-slate-900">{graduationYear}</p>
-                </div>
-              )}
-              {phone && (
-                <div>
-                  <p className="text-[10px] font-mono uppercase tracking-wider text-slate-500">Telepon</p>
-                  <p className="mt-0.5 text-sm text-slate-900">{phone}</p>
-                </div>
-              )}
-              {bio && (
-                <div>
-                  <p className="text-[10px] font-mono uppercase tracking-wider text-slate-500">Bio</p>
-                  <p className="mt-0.5 text-sm text-slate-600">{bio}</p>
-                </div>
-              )}
-              <div className="h-px bg-slate-200" />
-              {/* Generate CV Button */}
-              <div>
-                <p className="text-[10px] font-mono uppercase tracking-wider text-slate-500 mb-2">
-                  Curriculum Vitae
-                </p>
-                <button
-                  type="button"
-                  onClick={() => setCvDialogOpen(true)}
-                  className="w-full inline-flex items-center justify-center gap-2 rounded-md bg-amikom-purple px-4 py-2.5 text-sm font-medium text-white transition-all active:scale-[0.98] hover:bg-amikom-purple-hover"
-                  aria-label="Buka preview dan unduh CV"
-                >
-                  <FileText className="h-4 w-4" aria-hidden="true" />
-                  Generate CV
-                </button>
-                <p className="mt-1.5 text-[10px] text-slate-400 text-center">
-                  Format PDF · ATS-friendly · Bahasa Indonesia &amp; English
-                </p>
-              </div>
-              <div className="h-px bg-slate-200" />
-              <div>
-                <p className="text-[10px] font-mono uppercase tracking-wider text-slate-500">Bergabung Sejak</p>
-                <p className="mt-0.5 text-sm text-slate-900">
-                  {profile?.created_at
-                    ? new Date(profile.created_at).toLocaleDateString('id-ID', { day: 'numeric', month: 'long', year: 'numeric' })
-                    : '—'}
-                </p>
+                <label className="block text-xs font-medium text-slate-600 font-mono uppercase tracking-wider">Tipe Pekerjaan yang Diinginkan</label>
+                <select value={preferredType} onChange={(e) => setPreferredType(e.target.value)}
+                  className="w-full rounded-md border border-slate-200 bg-white px-3.5 py-2.5 text-sm text-slate-900 outline-none transition-all focus:border-amikom-purple focus:ring-2 focus:ring-amikom-purple/20">
+                  <option value="">Pilih tipe...</option>
+                  {JOB_TYPES.map((type) => <option key={type} value={type}>{type}</option>)}
+                </select>
               </div>
             </div>
           </div>
-        </div>
-      </div>
+        </section>
 
-      {/* ─── Pengalaman Kerja ──────────────────────────────── */}
-      <div className="rounded-lg border border-slate-200 bg-white shadow-sm animate-fade-in-up overflow-hidden">
-        {/* Header */}
-        <div className="flex items-center justify-between px-6 py-4 border-b border-slate-100">
-          <div className="flex items-center gap-3">
-            <div className="flex h-8 w-8 items-center justify-center rounded-md bg-amikom-purple/10 text-amikom-purple">
-              <Briefcase className="h-4 w-4" />
-            </div>
-            <div>
-              <p className="text-[11px] font-mono uppercase tracking-wider text-slate-500">Profil Rekomendasi Pekerjaan</p>
-              <p className="text-sm font-semibold text-slate-900">Pengalaman Kerja</p>
-            </div>
-          </div>
-          <button
-            onClick={openAddTr}
-            className="flex items-center gap-1.5 rounded-md bg-amikom-purple px-3.5 py-2 text-xs font-semibold text-white transition-all active:scale-[0.98] hover:bg-amikom-purple-hover hover:text-amikom-jonquil-warm"
-          >
-            <Plus className="h-3.5 w-3.5" />
-            Tambah
+        {/* ── Simpan Atribut ──────────────────────────────── */}
+        <div className="animate-fade-in-up flex flex-col gap-3 rounded-lg border border-slate-200 bg-white p-4 shadow-sm sm:flex-row sm:items-center sm:justify-between" style={{ animationDelay: '0.25s' }}>
+          <p className="text-xs text-slate-500">Perubahan tersimpan menyeluruh untuk atribut rekomendasi.</p>
+          <button type="submit" disabled={saving}
+            className="rounded-md bg-amikom-purple px-5 py-2.5 text-sm font-medium text-white transition-all active:scale-[0.98] hover:bg-amikom-purple-hover hover:text-amikom-jonquil-warm disabled:opacity-50 flex items-center justify-center gap-2">
+            {saving ? (
+              <><span className="inline-block h-4 w-4 animate-spin rounded-full border-2 border-white/30 border-t-white" /> Menyimpan...</>
+            ) : 'Simpan Perubahan'}
           </button>
         </div>
+      </form>
+
+      {/* ── Card 6 · Pengalaman Kerja (kiri) + Generate CV (kanan) ── */}
+      <div className="grid items-start gap-6 lg:grid-cols-3">
+        {/* Kiri — Riwayat Pekerjaan */}
+        <div className="rounded-lg border border-slate-200 bg-white shadow-sm animate-fade-in-up overflow-hidden lg:col-span-2" style={{ animationDelay: '0.05s' }}>
+          {/* Header */}
+          <div className="flex items-center justify-between px-6 py-4 border-b border-slate-100">
+            <div className="flex items-center gap-3">
+              <div className="flex h-8 w-8 items-center justify-center rounded-md bg-amikom-purple/10 text-amikom-purple">
+                <Briefcase className="h-4 w-4" />
+              </div>
+              <div>
+                <p className="text-[11px] font-mono uppercase tracking-wider text-slate-500">Curriculum Vitae</p>
+                <p className="text-sm font-semibold text-slate-900">Pengalaman Kerja</p>
+                <p className="text-xs text-slate-400">Riwayat pekerjaan dipakai untuk CV sekaligus atribut rekomendasi.</p>
+              </div>
+            </div>
+            <button
+              onClick={openAddTr}
+              className="flex items-center gap-1.5 rounded-md bg-amikom-purple px-3.5 py-2 text-xs font-semibold text-white transition-all active:scale-[0.98] hover:bg-amikom-purple-hover hover:text-amikom-jonquil-warm"
+            >
+              <Plus className="h-3.5 w-3.5" />
+              Tambah
+            </button>
+          </div>
 
         {/* List */}
         <div className="divide-y divide-slate-100">
@@ -691,7 +626,7 @@ export default function ProfilePage() {
             <div className="flex flex-col items-center justify-center py-12 text-center">
               <Briefcase className="h-8 w-8 text-slate-300 mb-3" />
               <p className="text-sm text-slate-500">Belum ada riwayat kerja</p>
-              <p className="text-xs text-slate-400 mt-1">Tambahkan pengalaman kerja untuk melengkapi profil Anda</p>
+              <p className="text-xs text-slate-400 mt-1">Tambahkan pengalaman kerja untuk melengkapi CV Anda</p>
               <button
                 onClick={openAddTr}
                 className="mt-4 rounded-md bg-amikom-purple px-4 py-2 text-xs font-semibold text-white transition-all hover:bg-amikom-purple-hover"
@@ -738,6 +673,50 @@ export default function ProfilePage() {
               </div>
             ))
           )}
+        </div>
+      </div>
+
+        {/* Kanan — Generate CV */}
+        <div className="animate-fade-in-up rounded-lg border border-slate-200 bg-white p-6 shadow-sm lg:col-span-1" style={{ animationDelay: '0.1s' }}>
+          <div className="flex h-10 w-10 items-center justify-center rounded-md bg-amikom-purple/10 text-amikom-purple">
+            <FileText className="h-5 w-5" aria-hidden="true" />
+          </div>
+          <p className="mt-4 text-[11px] font-mono uppercase tracking-wider text-slate-500">Curriculum Vitae</p>
+          <h3 className="mt-1 text-base font-semibold text-slate-900">Generate CV</h3>
+          <p className="mt-1 text-xs text-slate-500 leading-relaxed">
+            Susun CV ATS-friendly dari profil, pengalaman kerja, dan data Tracer Study —
+            tersedia dalam format PDF Bahasa Indonesia &amp; English.
+          </p>
+          <div className="mt-5">
+            {hasCompletedTracerStudy ? (
+              <>
+                <button
+                  type="button"
+                  onClick={() => setCvDialogOpen(true)}
+                  className="w-full inline-flex items-center justify-center gap-2 rounded-md bg-amikom-purple px-4 py-2.5 text-sm font-medium text-white transition-all active:scale-[0.98] hover:bg-amikom-purple-hover"
+                >
+                  <FileText className="h-4 w-4" aria-hidden="true" />
+                  Preview &amp; Unduh CV
+                </button>
+                <p className="mt-2 text-[10px] text-slate-400 text-center">
+                  Format PDF · ATS-friendly · Bahasa Indonesia &amp; English
+                </p>
+              </>
+            ) : (
+              <>
+                <button
+                  type="button"
+                  onClick={() => router.push('/dashboard/tracer-study')}
+                  className="w-full inline-flex items-center justify-center gap-2 rounded-md bg-amikom-jonquil-warm px-4 py-2.5 text-sm font-medium text-amikom-ink transition-all active:scale-[0.98] hover:brightness-95"
+                >
+                  Isi Tracer Study Dulu
+                </button>
+                <p className="mt-2 text-[10px] text-slate-400 text-center">
+                  Selesaikan Tracer Study untuk mengaktifkan Generate CV
+                </p>
+              </>
+            )}
+          </div>
         </div>
       </div>
 
