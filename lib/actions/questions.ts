@@ -6,7 +6,9 @@ import { revalidatePath, revalidateTag, unstable_cache } from 'next/cache'
 import { z } from 'zod'
 import { createClient } from '@/lib/supabase/server'
 import { createAdminClient } from '@/lib/supabase/admin'
-import { withAuth, orThrow } from './helpers'
+import { orThrow } from './helpers'
+import { requirePermission } from '@/lib/permissions/guards'
+import { PERMISSIONS } from '@/lib/permissions'
 
 const questionSchema = z.object({
   question_text: z.string().min(1, 'Teks pertanyaan wajib diisi'),
@@ -18,7 +20,7 @@ const questionSchema = z.object({
 })
 
 export async function createQuestion(formData: FormData) {
-  const { supabase, user } = await withAuth()
+  const { supabase } = await requirePermission(PERMISSIONS.QUESTION_MANAGE)
 
   const raw = {
     question_text: formData.get('question_text') as string,
@@ -55,7 +57,7 @@ export async function createQuestion(formData: FormData) {
 }
 
 export async function updateQuestion(id: string, formData: FormData) {
-  const { supabase, user } = await withAuth()
+  const { supabase } = await requirePermission(PERMISSIONS.QUESTION_MANAGE)
 
   const raw = {
     question_text: formData.get('question_text') as string,
@@ -93,7 +95,7 @@ export async function updateQuestion(id: string, formData: FormData) {
 }
 
 export async function deleteQuestion(id: string) {
-  const { supabase } = await withAuth()
+  const { supabase } = await requirePermission(PERMISSIONS.QUESTION_MANAGE)
   const { error } = await supabase
     .from('tracer_study_questions')
     .delete()
@@ -358,7 +360,7 @@ export async function getSistemAlumniStats(year?: string) {
  * Seksi A (Data Pribadi) sengaja tidak dimasukkan — sudah ada di profil alumni.
  */
 export async function bulkCreateFromTemplate(angkatan: string, overwrite: boolean = false) {
-  const { supabase } = await withAuth()
+  const { supabase } = await requirePermission(PERMISSIONS.QUESTION_MANAGE)
 
   if (!/^\d{4}$/.test(angkatan)) {
     throw new Error('Angkatan harus 4 digit tahun')
@@ -397,7 +399,7 @@ export async function bulkCreateFromTemplate(angkatan: string, overwrite: boolea
 }
 
 export async function deleteQuestionsByAngkatan(angkatan: string) {
-  const { supabase } = await withAuth()
+  const { supabase } = await requirePermission(PERMISSIONS.QUESTION_MANAGE)
 
   if (!/^\d{4}$/.test(angkatan)) {
     throw new Error('Angkatan harus 4 digit tahun')

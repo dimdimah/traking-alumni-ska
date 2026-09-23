@@ -3,17 +3,11 @@
 import { revalidatePath } from 'next/cache'
 import { createClient } from '@/lib/supabase/server'
 import { beritaSchema, sertifikasiSchema, faqSchema, kisahSuksesSchema } from '@/lib/schemas/content'
+import { requirePermission } from '@/lib/permissions/guards'
+import { PERMISSIONS } from '@/lib/permissions'
 
 async function checkAdminRole() {
-  const supabase = await createClient()
-  const { data: { user } } = await supabase.auth.getUser()
-  if (!user) throw new Error('Unauthorized')
-  const { data: profile } = await supabase
-    .from('profiles')
-    .select('role')
-    .eq('id', user.id)
-    .single() as { data: { role: string } | null; error: unknown }
-  if (profile?.role !== 'super_user') throw new Error('Forbidden')
+  const { supabase } = await requirePermission(PERMISSIONS.CONTENT_MANAGE)
   return supabase
 }
 

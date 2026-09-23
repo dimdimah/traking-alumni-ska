@@ -21,6 +21,7 @@ export const routeLabels: Record<string, string> = {
   faq: 'FAQ',
   'super-user': 'Super User',
   users: 'Manajemen User',
+  roles: 'Role & Akses',
 }
 
 export interface BreadcrumbItem {

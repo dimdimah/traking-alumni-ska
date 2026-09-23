@@ -1,22 +1,15 @@
 'use server'
 
 import { revalidatePath, revalidateTag, unstable_cache } from 'next/cache'
-import { redirect } from 'next/navigation'
 import { createClient } from '@/lib/supabase/server'
 import { createAdminClient } from '@/lib/supabase/admin'
 import { jobSchema } from '@/lib/schemas/jobs'
+import { requirePermission } from '@/lib/permissions/guards'
+import { PERMISSIONS } from '@/lib/permissions'
 import type { Job } from '@/types/database'
 
 async function checkAdminRole() {
-  const supabase = await createClient()
-  const { data: { user } } = await supabase.auth.getUser()
-  if (!user) redirect('/login')
-  const { data: profile } = await supabase
-    .from('profiles')
-    .select('role')
-    .eq('id', user.id)
-    .single() as { data: { role: string } | null; error: unknown }
-  if (profile?.role !== 'super_user') throw new Error('Forbidden')
+  const { supabase } = await requirePermission(PERMISSIONS.JOB_MANAGE)
   return supabase
 }
 

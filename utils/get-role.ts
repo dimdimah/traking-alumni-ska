@@ -1,12 +1,12 @@
 // FILE: utils/get-role.ts
 import { createClient } from '@/lib/supabase/server'
-import type { AppRole, Profile } from '@/types/database'
+import type { Profile } from '@/types/database'
 
 /**
  * Ambil role user yang sedang login (server-side).
  * Return null jika tidak ada session.
  */
-export async function getUserRole(): Promise<AppRole | null> {
+export async function getUserRole(): Promise<string | null> {
   const supabase = await createClient()
 
   const { data: { user }, error: userError } = await supabase.auth.getUser()

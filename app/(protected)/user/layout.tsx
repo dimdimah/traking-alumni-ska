@@ -6,8 +6,9 @@ export default function UserLayout({
 }: {
   children: React.ReactNode
 }) {
+  // Cukup punya profile — role apa pun (termasuk role custom) boleh masuk area user.
   return (
-    <RoleGuard allowedRoles={['user', 'super_user']} redirectTo="/login">
+    <RoleGuard redirectTo="/login">
       {children}
     </RoleGuard>
   )

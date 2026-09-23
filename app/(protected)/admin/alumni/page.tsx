@@ -4,7 +4,9 @@ import { useState, useEffect, useCallback, useMemo, useDeferredValue } from 'rea
 import { useRouter, useSearchParams } from 'next/navigation'
 import { createClient } from '@/lib/supabase/client'
 import { resetUserPassword, deleteUser } from '@/lib/actions/alumni'
+import { setUserRole, getRoleOptions } from '@/lib/actions/permissions'
 import { exportAlumniToExcel } from '@/lib/actions/export'
+import { roleLabel } from '@/lib/permissions'
 import { Badge } from '@/components/ui/badge'
 import { Modal } from '@/components/ui/modal'
 import { MoreVertical, Search, UserPlus, Download, Upload } from 'lucide-react'
@@ -28,7 +30,7 @@ import {
 import { PageHeader } from '@/components/ui/page-header'
 import { Pagination } from '@/components/ui/pagination'
 import AddUserForm from '@/components/admin/add-user-form'
-import type { Profile } from '@/types/database'
+import type { Profile, RoleRow } from '@/types/database'
 import { toast } from 'sonner'
 
 const USERS_PER_PAGE = 20
@@ -46,8 +48,20 @@ export default function AdminAlumniPage() {
   const [actionLoading, setActionLoading] = useState(false)
   const [deleteConfirm, setDeleteConfirm] = useState(false)
   const [showAddDialog, setShowAddDialog] = useState(false)
+  const [showChangeRole, setShowChangeRole] = useState(false)
+  const [roleOptions, setRoleOptions] = useState<RoleRow[]>([])
+  const [selectedRole, setSelectedRole] = useState('')
   const [currentPage, setCurrentPage] = useState(Number(searchParams.get('page')) || 1)
   const [totalPages, setTotalPages] = useState(1)
+
+  // Opsi role untuk dialog Ubah Role (sekali per sesi)
+  useEffect(() => {
+    let cancelled = false
+    getRoleOptions()
+      .then((rows) => { if (!cancelled) setRoleOptions(rows) })
+      .catch(() => { /* fallback: hanya opsi dari role yang sudah dimuat */ })
+    return () => { cancelled = true }
+  }, [])
 
   const deferredQuery = useDeferredValue(searchQuery)
   const filteredUsers = useMemo(() => {
@@ -127,6 +141,28 @@ export default function AdminAlumniPage() {
   function confirmDeleteUser() {
     if (!selectedUser) return
     setDeleteConfirm(true)
+  }
+
+  function openChangeRole() {
+    if (!selectedUser) return
+    setSelectedRole(selectedUser.role)
+    setShowChangeRole(true)
+  }
+
+  async function handleChangeRole() {
+    if (!selectedUser || !selectedRole) return
+    setActionLoading(true)
+    try {
+      await setUserRole(selectedUser.id, selectedRole)
+      toast.success(`Role ${selectedUser.email} → ${roleLabel(selectedRole)}`)
+      setShowChangeRole(false)
+      setSelectedUser(null)
+      loadUsers()
+    } catch (err) {
+      toast.error(err instanceof Error ? err.message : 'Gagal mengubah role')
+    } finally {
+      setActionLoading(false)
+    }
   }
 
   async function handleDelete() {
@@ -240,7 +276,7 @@ export default function AdminAlumniPage() {
                     <td className="px-6 py-4"><p className="text-sm text-slate-600">{user.graduation_year || '—'}</p></td>
                     <td className="px-6 py-4">
                       <Badge variant={user.role === 'super_user' ? 'default' : 'secondary'}>
-                        {user.role === 'super_user' ? 'Super User' : 'User'}
+                        {roleLabel(user.role)}
                       </Badge>
                     </td>
                     <td className="px-6 py-4">
@@ -284,6 +320,10 @@ export default function AdminAlumniPage() {
         description="Aksi"
       >
         <div className="space-y-3">
+          <button onClick={openChangeRole}
+            className="w-full rounded-md border border-slate-200 bg-white px-4 py-3 text-sm font-medium text-slate-700 text-left transition-all hover:border-slate-400 hover:bg-slate-50">
+            Ubah Role
+          </button>
           <button onClick={() => { setShowResetPw(true); setNewPassword('') }}
             className="w-full rounded-md border border-slate-200 bg-white px-4 py-3 text-sm font-medium text-slate-700 text-left transition-all hover:border-slate-400 hover:bg-slate-50">
             Reset Password
@@ -307,6 +347,43 @@ export default function AdminAlumniPage() {
           <AddUserForm onSuccess={() => { setShowAddDialog(false); loadUsers() }} />
         </DialogContent>
       </Dialog>
+
+      {/* Ubah Role Modal */}
+      <Modal
+        open={showChangeRole}
+        onClose={() => setShowChangeRole(false)}
+        title="Ubah Role"
+        footer={
+          <>
+            <button onClick={() => setShowChangeRole(false)}
+              className="rounded-md border border-slate-200 bg-white px-5 py-2.5 text-sm font-medium text-slate-600 transition-all hover:border-slate-400 hover:text-slate-900">
+              Batal
+            </button>
+            <button onClick={handleChangeRole} disabled={actionLoading || !selectedRole}
+              className="rounded-md bg-amikom-purple px-5 py-2.5 text-sm font-semibold text-white transition-all active:scale-[0.98] hover:bg-amikom-purple-hover hover:text-amikom-jonquil-warm disabled:opacity-50">
+              {actionLoading ? 'Menyimpan...' : 'Simpan Role'}
+            </button>
+          </>
+        }
+      >
+        <p className="text-sm text-slate-600 mb-4">
+          Pilih role untuk <strong>{selectedUser?.email}</strong>. Permission mengikuti role
+          (lihat tab Role &amp; Akses). Tidak bisa mengubah role sendiri.
+        </p>
+        <select
+          value={selectedRole}
+          onChange={(e) => setSelectedRole(e.target.value)}
+          className="w-full rounded-md border border-slate-200 bg-white px-3.5 py-2.5 text-sm text-slate-900 outline-none transition-colors focus:border-amikom-purple focus:ring-2 focus:ring-amikom-purple/20"
+        >
+          {roleOptions.length === 0 && <option value="">Memuat role…</option>}
+          {roleOptions.map((r) => (
+            <option key={r.name} value={r.name}>
+              {roleLabel(r.name)}
+              {r.description ? ` — ${r.description}` : ''}
+            </option>
+          ))}
+        </select>
+      </Modal>
 
       {/* Reset Password Modal */}
       <Modal

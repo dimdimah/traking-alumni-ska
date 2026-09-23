@@ -27,6 +27,15 @@ jest.mock("next/cache", () => ({
   revalidatePath: jest.fn(),
 }))
 
+jest.mock("@/lib/permissions/guards", () => ({
+  requireAuth: jest.fn(),
+  requirePermission: jest.fn().mockResolvedValue({
+    supabase: {},
+    user: { id: "test-user" },
+    profile: { role: "super_user" },
+  }),
+}))
+
 import { bulkImportUsers, type BulkImportResult } from "@/lib/actions/bulk-import"
 
 // ── Tests ──

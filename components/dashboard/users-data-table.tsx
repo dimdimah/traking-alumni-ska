@@ -3,6 +3,7 @@
 import { Badge } from '@/components/ui/badge'
 import { MoreVertical } from 'lucide-react'
 import { Pagination } from '@/components/ui/pagination'
+import { roleLabel } from '@/lib/permissions'
 import type { Profile } from '@/types/database'
 
 interface UsersDataTableProps {
@@ -52,7 +53,7 @@ export function UsersDataTable({ users, currentPage = 1, totalPages = 1, onPageC
                     <Badge
                       variant={user.role === 'super_user' ? 'default' : 'secondary'}
                     >
-                      {user.role === 'super_user' ? 'Super User' : 'User'}
+                      {roleLabel(user.role)}
                     </Badge>
                   </td>
                   <td className="px-6 py-4">
