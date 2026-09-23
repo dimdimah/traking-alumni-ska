@@ -127,18 +127,19 @@ describe("Bulk Import — Server Action Logic", () => {
       expect(res.errors[0].message).toContain("Header wajib")
     })
 
-    it("should succeed without Role header (defaults to user)", async () => {
+    it("should succeed without Role header (role always locked to user)", async () => {
       const csv = makeCSV(
         "Nama,Email,Password",
         "Budi,budi@amikomsolo.ac.id,password123"
       )
       const res = await bulkImportUsers(csv)
       expect(res.success).toBe(1)
-      expect(mockCreateUser).toHaveBeenCalledWith(
-        expect.objectContaining({
-          user_metadata: expect.objectContaining({ role: "user" }),
-        })
-      )
+      expect(mockCreateUser).toHaveBeenCalledWith({
+        email: "budi@amikomsolo.ac.id",
+        password: "password123",
+        email_confirm: true,
+        user_metadata: { display_name: "Budi" },
+      })
     })
   })
 
@@ -166,14 +167,14 @@ describe("Bulk Import — Server Action Logic", () => {
       expect(res.errors[0].message).toContain("Email tidak valid")
     })
 
-    it("should reject password shorter than 6 characters", async () => {
+    it("should reject password shorter than 8 characters", async () => {
       const csv = makeCSV(
         "Nama,Email,Password,Role",
         "Budi,budi@amikomsolo.ac.id,12345,user"
       )
       const res = await bulkImportUsers(csv)
       expect(res.failed).toBe(1)
-      expect(res.errors[0].message).toContain("Password minimal 6 karakter")
+      expect(res.errors[0].message).toContain("Password minimal 8 karakter")
     })
 
     it("should reject empty name", async () => {
@@ -186,41 +187,34 @@ describe("Bulk Import — Server Action Logic", () => {
       expect(res.errors[0].message).toContain("Nama wajib diisi")
     })
 
-    it("should reject invalid role value", async () => {
+    it("should ignore Role column value (role locked to user via server)", async () => {
       const csv = makeCSV(
         "Nama,Email,Password,Role",
         "Budi,budi@amikomsolo.ac.id,password123,admin"
       )
       const res = await bulkImportUsers(csv)
-      expect(res.failed).toBe(1)
+      expect(res.success).toBe(1)
+      expect(mockCreateUser.mock.calls[0][0].user_metadata).not.toHaveProperty("role")
     })
 
-    it("should accept role super_user", async () => {
+    it("should ignore super_user role from CSV (locked to user)", async () => {
       const csv = makeCSV(
         "Nama,Email,Password,Role",
         "Budi,budi@amikomsolo.ac.id,password123,super_user"
       )
       const res = await bulkImportUsers(csv)
       expect(res.success).toBe(1)
-      expect(mockCreateUser).toHaveBeenCalledWith(
-        expect.objectContaining({
-          user_metadata: expect.objectContaining({ role: "super_user" }),
-        })
-      )
+      expect(mockCreateUser.mock.calls[0][0].user_metadata).not.toHaveProperty("role")
     })
 
-    it("should default role to user when column is empty", async () => {
+    it("should not put role in user_metadata when Role column is empty", async () => {
       const csv = makeCSV(
         "Nama,Email,Password,Role",
         "Budi,budi@amikomsolo.ac.id,password123,"
       )
       const res = await bulkImportUsers(csv)
       expect(res.success).toBe(1)
-      expect(mockCreateUser).toHaveBeenCalledWith(
-        expect.objectContaining({
-          user_metadata: expect.objectContaining({ role: "user" }),
-        })
-      )
+      expect(mockCreateUser.mock.calls[0][0].user_metadata).not.toHaveProperty("role")
     })
   })
 
@@ -310,7 +304,6 @@ describe("Bulk Import — Server Action Logic", () => {
         email_confirm: true,
         user_metadata: {
           display_name: "Budi",
-          role: "user",
         },
       })
     })

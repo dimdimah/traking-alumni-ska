@@ -10,8 +10,17 @@ export type LoginState = {
 
 const ALLOWED_DOMAIN = 'amikomsolo.ac.id'
 
+const SAFE_NEXT_PREFIXES = ['/dashboard', '/admin', '/user', '/super-user']
+
+function safeNext(raw: FormDataEntryValue | null): string | null {
+  if (typeof raw !== 'string' || raw.length === 0) return null
+  if (raw.startsWith('//') || raw.includes('://')) return null
+  return SAFE_NEXT_PREFIXES.some((prefix) => raw.startsWith(prefix)) ? raw : null
+}
+
 export async function login(_prevState: LoginState, formData: FormData): Promise<LoginState> {
   const email = (formData.get('email') as string) || ''
+  const next = safeNext(formData.get('next'))
 
   if (!email.toLowerCase().endsWith(`@${ALLOWED_DOMAIN.toLowerCase()}`)) {
     return { error: `Hanya email @${ALLOWED_DOMAIN} yang diizinkan`, redirectTo: null }
@@ -42,11 +51,11 @@ export async function login(_prevState: LoginState, formData: FormData): Promise
       .single() as { data: { role: string } | null; error: unknown }
 
     if (profileData?.role === 'super_user') {
-      return { error: null, redirectTo: '/admin' }
+      return { error: null, redirectTo: next ?? '/admin' }
     }
   }
 
-  return { error: null, redirectTo: '/dashboard' }
+  return { error: null, redirectTo: next ?? '/dashboard' }
 }
 
 export async function logout() {

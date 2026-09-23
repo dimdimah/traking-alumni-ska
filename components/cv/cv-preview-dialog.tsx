@@ -11,6 +11,7 @@ import {
 } from '@/components/ui/dialog'
 import { getCvData } from '@/lib/actions/cv'
 import type { CvData } from '@/lib/actions/cv'
+import { parseCertifications } from '@/lib/utils/certifications'
 
 // ─── Types ────────────────────────────────────────────────────────────────────
 
@@ -81,7 +82,8 @@ function getProdiLabels(programStudi: string | null): { degree: string; field: s
 function CvHtmlPreview({ data }: { data: CvData }) {
   const { profile, trackRecords, SistemAlumni } = data
   const skills: string[] = Array.isArray(profile.skills) ? (profile.skills as string[]) : []
-  const certifications: string[] = Array.isArray(profile.certifications) ? profile.certifications : []
+  const certificationLines: string[] = parseCertifications(profile.certifications)
+    .map(c => [c.name, c.issuer, c.year].filter(Boolean).join(' — '))
   const jobInterests: string[] = Array.isArray(profile.job_interests) ? profile.job_interests : []
   const prodi = getProdiLabels(profile.program_studi ?? profile.education_level)
 
@@ -182,14 +184,19 @@ function CvHtmlPreview({ data }: { data: CvData }) {
         </div>
       )}
 
-      {certifications.length > 0 && (
+      {certificationLines.length > 0 && (
         <div className="mb-2">
           <h2 className="text-[10px] font-bold uppercase tracking-widest text-[#700070] border-b border-[#ccc] pb-1 mb-3">
             Sertifikasi Kompetensi
           </h2>
-          <p className="text-[#333] text-[12px] leading-relaxed">
-            {certifications.join(', ')}
-          </p>
+          <ul className="text-[#333] text-[12px] leading-relaxed space-y-1">
+            {certificationLines.map((line, i) => (
+              <li key={i} className="flex gap-2">
+                <span className="shrink-0 text-[#700070]">•</span>
+                <span>{line}</span>
+              </li>
+            ))}
+          </ul>
         </div>
       )}
 

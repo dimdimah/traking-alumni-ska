@@ -8,6 +8,7 @@ import { createTrackRecord, updateTrackRecord, deleteTrackRecord } from '@/lib/a
 import { getProfileCompletenessDetails } from '@/lib/utils/profile-completeness'
 import SkillSelector from '@/components/skill-selector'
 import TagInput from '@/components/tag-input'
+import CertificationInput from '@/components/certification-input'
 import {
   Select,
   SelectContent,
@@ -100,7 +101,7 @@ export default function ProfilePage() {
     setSkills(Array.isArray(profileData.skills) ? profileData.skills.join(', ') : '')
     setLocation(profileData.location || '')
     setProgramStudi(profileData.program_studi || profileData.education_level || '')
-    setCertifications(Array.isArray(profileData.certifications) ? profileData.certifications.join(', ') : '')
+    setCertifications(Array.isArray(profileData.certifications) ? profileData.certifications.join('\n') : '')
     setJobInterests(Array.isArray(profileData.job_interests) ? profileData.job_interests.join(', ') : '')
     setPreferredLocation(profileData.preferred_location || '')
     setExpectedSalary(profileData.expected_salary || '')
@@ -197,7 +198,7 @@ export default function ProfilePage() {
         skills: skills.split(/[,;]/).map(s => s.trim()).filter(Boolean),
         location: location || null,
         program_studi: programStudi || null,
-        certifications: certifications.split(/[,;]/).map(s => s.trim()).filter(Boolean),
+        certifications: certifications.split(/\r?\n/).map(s => s.trim()).filter(Boolean),
         job_interests: jobInterests.split(/[,;]/).map(s => s.trim()).filter(Boolean),
         preferred_location: preferredLocation || null,
         expected_salary: expectedSalary || null,
@@ -429,7 +430,7 @@ export default function ProfilePage() {
 
                   <div className="space-y-2">
                     <label className="block text-xs font-medium text-slate-600 font-mono uppercase tracking-wider">Sertifikasi Kompetensi</label>
-                    <TagInput value={certifications} onChange={setCertifications} placeholder="Contoh: AWS Certified Cloud Practitioner" />
+                    <CertificationInput value={certifications} onChange={setCertifications} />
                   </div>
 
                   <div className="space-y-2">
@@ -586,7 +587,7 @@ export default function ProfilePage() {
               {certifications && (
                 <div>
                   <p className="text-[10px] font-mono uppercase tracking-wider text-slate-500">Sertifikasi Kompetensi</p>
-                  <p className="mt-0.5 text-sm text-slate-600">{certifications}</p>
+                  <p className="mt-0.5 text-sm text-slate-600 whitespace-pre-line">{certifications}</p>
                 </div>
               )}
               {jobInterests && (

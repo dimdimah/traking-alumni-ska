@@ -242,10 +242,10 @@ export default async function HomePage() {
                 </div>
                 <div className="mt-9 flex flex-col sm:flex-row items-center justify-center gap-4">
                   <Link
-                    href="/login"
+                    href={isLoggedIn ? (dashboardHref === '/admin' ? '/admin' : '/user/rekomendasi') : '/login?next=%2Fuser%2Frekomendasi'}
                     className="inline-flex items-center justify-center gap-2 rounded-full bg-white px-8 py-4 text-[16px] font-bold text-amikom-purple shadow-lg transition-all hover:bg-amikom-jonquil-warm hover:text-amikom-ink active:scale-[0.98]"
                   >
-                    Masuk &amp; Lihat Rekomendasi
+                    {!isLoggedIn ? 'Masuk & Lihat Rekomendasi' : dashboardHref === '/admin' ? 'Buka Portal' : 'Lihat Rekomendasi'}
                     <svg className="h-5 w-5" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2.5}>
                       <path strokeLinecap="round" strokeLinejoin="round" d="M13.5 4.5L21 12m0 0l-7.5 7.5M21 12H3" />
                     </svg>
@@ -280,10 +280,10 @@ export default async function HomePage() {
                 </p>
                 <div className="mt-10 flex flex-col sm:flex-row items-center justify-center lg:justify-start gap-4">
                   <Link
-                    href="/login"
+                    href={isLoggedIn ? (dashboardHref === '/admin' ? '/admin/kuesioner' : '/dashboard/tracer-study') : '/login?next=%2Fdashboard%2Ftracer-study'}
                     className="flex w-full sm:w-auto items-center justify-center gap-2 rounded-lg bg-amikom-jonquil-warm px-8 py-4 text-[16px] font-bold text-amikom-ink transition-colors hover:bg-white"
                   >
-                    Mulai Isi Tracer Study
+                    {!isLoggedIn ? 'Mulai Isi Tracer Study' : dashboardHref === '/admin' ? 'Kelola Kuesioner' : 'Isi/Perbarui Tracer Study'}
                     <svg className="h-5 w-5" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2.5}>
                       <path strokeLinecap="round" strokeLinejoin="round" d="M13.5 4.5L21 12m0 0l-7.5 7.5M21 12H3" />
                     </svg>
@@ -342,7 +342,7 @@ export default async function HomePage() {
       <NewsSection items={beritaItems} />
 
       {/* ═══════════════ JOB VACANCIES ═══════════════ */}
-      <JobVacancies items={jobItems} />
+      <JobVacancies items={jobItems} isLoggedIn={isLoggedIn} dashboardHref={dashboardHref} />
 
       {/* ═══════════════ VERIFIKASI ALUMNI ═══════════════ */}
       <section id="verifikasi" className="bg-white scroll-mt-20">
@@ -409,7 +409,7 @@ export default async function HomePage() {
                 Akun
               </h4>
               <ul className="mt-3 space-y-2">
-                <li><Link href="/login" className="text-[15px] leading-[1.6] text-amikom-ink-muted-48 hover:text-amikom-purple transition-colors">Masuk</Link></li>
+                <li><Link href={isLoggedIn ? dashboardHref : '/login'} className="text-[15px] leading-[1.6] text-amikom-ink-muted-48 hover:text-amikom-purple transition-colors">{isLoggedIn ? 'Buka Portal' : 'Masuk'}</Link></li>
                 <li><span className="text-[15px] leading-[1.6] text-amikom-ink-muted-48">Akun dibuat oleh admin</span></li>
               </ul>
             </div>

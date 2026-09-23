@@ -6,6 +6,7 @@
   StyleSheet,
 } from '@react-pdf/renderer'
 import type { CvData } from '@/lib/actions/cv'
+import { parseCertifications } from '@/lib/utils/certifications'
 
 // --- i18n labels ------------------------------------------------------------
 const LABELS = {
@@ -98,7 +99,7 @@ const PRODI_CONFIG: Record<string, { id: ProdiLabel; en: ProdiLabel }> = {
 }
 
 /** Fallback jika education_level tidak dikenali */
-const PRODI_FALLBACK = PRODI_CONFIG['S1']
+const PRODI_FALLBACK = PRODI_CONFIG['S1 Informatika']
 
 function getProdiLabels(programStudi: string | null, lang: CvLang): ProdiLabel {
   const key = (programStudi ?? '').trim()
@@ -258,9 +259,8 @@ export function CvTemplate({ data, lang }: CvTemplateProps) {
   const skillList: string[] = Array.isArray(profile.skills)
     ? (profile.skills as string[])
     : []
-  const certificationList: string[] = Array.isArray(profile.certifications)
-    ? profile.certifications
-    : []
+  const certificationLines: string[] = parseCertifications(profile.certifications)
+    .map(c => [c.name, c.issuer, c.year].filter(Boolean).join(' — '))
   const jobInterestList: string[] = Array.isArray(profile.job_interests)
     ? profile.job_interests
     : []
@@ -351,10 +351,10 @@ export function CvTemplate({ data, lang }: CvTemplateProps) {
           </View>
         )}
 
-        {certificationList.length > 0 && (
+          {certificationLines.length > 0 && (
           <View style={styles.section}>
             <Text style={styles.sectionTitle}>{lang === 'id' ? 'Sertifikasi Kompetensi' : 'Certifications'}</Text>
-            <Text style={styles.skillsText}>{certificationList.join(', ')}</Text>
+            <Text style={styles.skillsText}>{certificationLines.join('\n')}</Text>
           </View>
         )}
 

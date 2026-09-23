@@ -4,9 +4,9 @@ import { cache } from 'react'
 import { unstable_cache } from 'next/cache'
 import { createClient } from '@/lib/supabase/server'
 import { createAdminClient } from '@/lib/supabase/admin'
-import type { Profile, Job, MatchResult, TrackRecord } from '@/types/database'
+import type { Profile, Job, MatchResult, TrackRecord, MatchDebugPayload, JobMatchDebug, JobDocSample, ProfileSourceField } from '@/types/database'
 import { preprocess } from '@/lib/preprocessing'
-import { computeSimilarityScores } from '@/lib/tfidf'
+import { computeSimilarityScores, computeIDF, computeMatchBreakdown, computeCosineBreakdown } from '@/lib/tfidf'
 import { buildProfileDocument, buildJobDocument } from '@/lib/recommendation-docs'
 
 // Cache dalam satu request agar CareerPage + RekomendasiCard tidak double-fetch (auth & jobs)
@@ -62,6 +62,108 @@ export async function getJobRecommendations(
   const { user } = await getCachedAuthUser()
   if (!user) throw new Error('User tidak terautentikasi')
   return getRecommendationsForUser(user.id, limit)
+}
+
+// ─── Diagnostic matching (mode debug ?debug=1 di /user/rekomendasi) ───
+// Selalu fresh (tanpa cache) agar pantauan akurat saat menyetel ulang profil
+// atau saat lowongan baru masuk. Collect IDF yang sama persis dengan perhitungan
+// skor asli sehingga breakdown tokennya konsisten dengan urutan rekomendasi.
+export async function getMatchDebug(): Promise<MatchDebugPayload> {
+  const { user } = await getCachedAuthUser()
+  if (!user) throw new Error('User tidak terautentikasi')
+
+  const supabase = createAdminClient()
+  const [{ data: profile }, jobs, { data: trackRecords }] = await Promise.all([
+    supabase.from('profiles').select('*').eq('id', user.id).single(),
+    getAllActiveJobsCached(),
+    supabase.from('track_records').select('position, company, description').eq('user_id', user.id),
+  ])
+  if (!profile || !jobs || jobs.length === 0) {
+    return {
+      generatedAt: new Date().toISOString(),
+      totalJobs: jobs ? jobs.length : 0,
+      profileSource: buildProfileSource(profile ?? null, []),
+      profileRaw: '',
+      profileTokens: [],
+      jobSamples: [],
+      entries: [],
+    }
+  }
+
+  const typedProfile = profile as Profile
+  const typedJobs = jobs as Job[]
+  const typedRecords = (trackRecords || []) as TrackRecord[]
+  const profileRaw = buildProfileDocument(typedProfile, typedRecords)
+  const profileTokens = preprocess(profileRaw)
+  const allJobTokens = typedJobs.map(job => preprocess(buildJobDocument(job)))
+
+  const idf = computeIDF([profileTokens, ...allJobTokens])
+  const scores = computeSimilarityScores(profileTokens, allJobTokens)
+
+  const entries: JobMatchDebug[] = typedJobs.map((job, index) => {
+    const breakDown = computeCosineBreakdown(profileTokens, allJobTokens[index], idf)
+    return {
+      jobId: job.id,
+      title: job.title,
+      company: job.company,
+      location: job.location ?? null,
+      score: scores[index] ?? breakDown.score,
+      jobTokens: allJobTokens[index],
+      matchedTerms: computeMatchBreakdown(profileTokens, allJobTokens[index], idf),
+      cosine: breakDown,
+    }
+  }).sort((a, b) => b.score - a.score)
+
+  // Semua lowongan sesuai urutan di database (bukan skor) — panel preprocessing
+  // menampilkan alur pengolahan tiap lowongan sesuai urutan datanya, bukan hasil ranking.
+  const jobSamples: JobDocSample[] = typedJobs.map((job, index) => ({
+    title: job.title,
+    company: job.company,
+    raw: buildJobDocument(job),
+    tokens: allJobTokens[index],
+    score: scores[index] ?? 0,
+    fields: {
+      title: job.title,
+      description: job.description ?? '',
+      skills: Array.isArray(job.skills) ? job.skills.join(', ') : '',
+      location: job.location ?? '',
+      type: job.type ?? '',
+    },
+  }))
+
+  return {
+    generatedAt: new Date().toISOString(),
+    totalJobs: typedJobs.length,
+    profileSource: buildProfileSource(profile, typedRecords),
+    profileRaw,
+    profileTokens,
+    jobSamples,
+    entries,
+  }
+}
+
+function buildProfileSource(
+  profile: Profile | null,
+  trackRecords: TrackRecord[],
+): ProfileSourceField[] {
+  if (!profile) return []
+  const formatArray = (value: string[] | null | undefined): string | null => {
+    if (!value || value.length === 0) return null
+    return value.join(', ')
+  }
+  const recordText = trackRecords
+    .map(r => [r.position, r.company].filter(Boolean).join(' — '))
+    .filter(Boolean)
+    .join(' | ')
+  return [
+    { label: 'Program Studi', value: profile.program_studi ?? null },
+    { label: 'Skill / Keahlian', value: formatArray(profile.skills) },
+    { label: 'Pengalaman Kerja (Track Record)', value: recordText || null },
+    { label: 'Sertifikasi', value: formatArray(profile.certifications) },
+    { label: 'Bidang / Posisi Diminati', value: formatArray(profile.job_interests) },
+    { label: 'Preferensi Lokasi', value: profile.preferred_location ?? null },
+    { label: 'Tipe Pekerjaan', value: profile.preferred_type ?? null },
+  ]
 }
 
 const getMatchingStatsCached = unstable_cache(

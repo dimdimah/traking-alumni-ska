@@ -28,6 +28,7 @@ const config: Config = {
     "<rootDir>/\\.next/",
     "<rootDir>/__tests__/setup.ts",
     "<rootDir>/__tests__/mocks/",
+    "<rootDir>/e2e/",
   ],
   collectCoverageFrom: [
     "lib/**/*.ts",

@@ -211,7 +211,7 @@ describe('TF-IDF Weight', () => {
 // ═══════════════════════════════════════════════════════════
 // 3. COSINE SIMILARITY
 // ═══════════════════════════════════════════════════════════
-import { cosineSimilarity, computeSimilarityScores } from '@/lib/tfidf'
+import { cosineSimilarity, computeSimilarityScores, computeCosineBreakdown } from '@/lib/tfidf'
 
 describe('Cosine Similarity', () => {
   it('should return 1 for identical vectors', () => {
@@ -279,6 +279,31 @@ describe('End-to-End Similarity Scores', () => {
   })
 })
 
+describe('Cosine Breakdown (mode diagnostik)', () => {
+  it('should match the plain cosine similarity score', () => {
+    const query = ['laravel', 'php', 'mysql']
+    const doc = ['laravel', 'php', 'backend']
+
+    const breakdown = computeCosineBreakdown(query, doc)
+    const idf = computeIDF([query, doc])
+    const expected = cosineSimilarity(
+      computeTFIDF(computeTF(query), idf),
+      computeTFIDF(computeTF(doc), idf),
+    )
+
+    expect(breakdown.score).toBeCloseTo(expected, 4)
+    expect(breakdown.dotProduct).toBeGreaterThan(0)
+    expect(breakdown.magnitudeProfile).toBeGreaterThan(0)
+    expect(breakdown.magnitudeJob).toBeGreaterThan(0)
+  })
+
+  it('should return zero-parts when there is no overlap', () => {
+    const breakdown = computeCosineBreakdown(['laravel'], ['akuntansi'])
+    expect(breakdown.score).toBe(0)
+    expect(breakdown.dotProduct).toBe(0)
+  })
+})
+
 // ═══════════════════════════════════════════════════════════
 // 4. RECOMMENDATION DOCUMENT BUILDING
 // ═══════════════════════════════════════════════════════════
@@ -325,25 +350,23 @@ describe('Recommendation Document Building', () => {
     },
   ] as TrackRecord[]
 
-  it('builds a profile document from the seven recommendation criteria', () => {
-    const doc = buildProfileDocument(profile, trackRecords)
+  it('builds a profile document from the seven attributes', () => {
+    const doc = buildProfileDocument(profile)
 
     expect(doc).toContain('S1 Informatika')
     expect(doc).toContain('Laravel')
-    expect(doc).toContain('Backend Developer')
-    expect(doc).toContain('Membangun API')
     expect(doc).toContain('Laravel Developer')
+    expect(doc).toContain('Backend Developer')
     expect(doc).toContain('Yogyakarta')
     expect(doc).toContain('Full-time')
     expect(doc).not.toContain('8-12 juta')
   })
 
-  it('uses position and description without prioritizing company names', () => {
+  it('includes track records in the profile document', () => {
     const doc = buildProfileDocument(profile, trackRecords)
 
-    expect(doc).toContain('Backend Developer')
+    expect(doc).toContain('PT Teknologi Maju')
     expect(doc).toContain('Membangun API dan layanan backend')
-    expect(doc).not.toContain('PT Teknologi Maju')
   })
 
   it('builds a job document from searchable job content', () => {
@@ -374,6 +397,30 @@ describe('Recommendation Document Building', () => {
     expect(doc).not.toContain('PT Teknologi Maju')
     expect(doc).not.toContain('8-12 juta')
   })
+
+  it('includes lokasi dan tipe di job document (atribut, bukan filter)', () => {
+    const jobInSolo = {
+      id: 'job-solo',
+      title: 'Graphic Designer',
+      company: 'Studio Kreatif',
+      location: 'Solo',
+      type: 'Full-time',
+      salary: null,
+      description: 'Desain visual untuk kebutuhan klien',
+      skills: [],
+      contact_info: null,
+      url: null,
+      source: 'Career Center',
+      is_active: true,
+      created_at: '2024-01-01T00:00:00Z',
+      updated_at: '2024-01-01T00:00:00Z',
+    } as unknown as Job
+
+    const doc = buildJobDocument(jobInSolo)
+
+    expect(doc).toContain('Solo')
+    expect(doc).toContain('Full-time')
+  })
 })
 
 // ═══════════════════════════════════════════════════════════
@@ -381,7 +428,7 @@ describe('Recommendation Document Building', () => {
 // ═══════════════════════════════════════════════════════════
 
 describe('Document Building Integration', () => {
-  it('builds a profile document from the seven recommendation criteria', () => {
+  it('builds a profile document from the seven attributes', () => {
     const profileFields = {
       program_studi: 'S1 Informatika',
       skills: ['Laravel', 'PHP', 'MySQL'],
@@ -391,21 +438,12 @@ describe('Document Building Integration', () => {
       preferred_type: 'Full-time',
     }
 
-    const trackRecords = [
-      { position: 'Backend Developer', description: 'Membangun API backend' },
-      { position: 'Full Stack Developer', description: 'Mengembangkan aplikasi web' },
-    ]
-
-    const doc = buildProfileDocument(
-      profileFields as unknown as Profile,
-      trackRecords as unknown as TrackRecord[],
-    )
+    const doc = buildProfileDocument(profileFields as unknown as Profile)
 
     expect(doc).toContain('S1 Informatika')
     expect(doc).toContain('Laravel')
-    expect(doc).toContain('Backend Developer')
-    expect(doc).toContain('Membangun API backend')
     expect(doc).toContain('Laravel Developer')
+    expect(doc).toContain('Backend Developer')
     expect(doc).toContain('Yogyakarta')
     expect(doc).toContain('Full-time')
   })
